@@ -25,7 +25,7 @@ def load_data():
             value = float(rows[0][0].split(":")[1].strip())
             rows.pop(0) # drop value
             new_df = pd.DataFrame([[weight, value]], columns=['weight', 'value'])
-            df = pd.concat([df, new_df], ignore_index=False)
+            df = pd.concat([df, new_df], ignore_index=True) # Make sure its True as it matches bag index 
              
     return df
 
@@ -34,6 +34,8 @@ def load_data():
 
 # initialize the dataset 
 df = load_data() 
+
+print(df.head())
 
 
 
