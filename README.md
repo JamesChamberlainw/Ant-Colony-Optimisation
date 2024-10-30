@@ -28,9 +28,7 @@ $$
     vpw = \frac{weight}{value} 
 $$
 
-
-
-Thus vpw can now be used to state the value of the weigt being added to the van - this can now be used to genearte a distance matrix. 
+Thus vpw can now be used to state the value of the weight being added to the van - this can now be used to generate the distance matrix what can then be used to produce the heuristic matrix.  
 
 ```py
 [[0.         0.13759298 0.07551697 ... 0.0834917  0.10746499 0.16746493]
@@ -42,4 +40,4 @@ Thus vpw can now be used to state the value of the weigt being added to the van 
  [0.0558301  0.13759298 0.07551697 ... 0.0834917  0.10746499 0.        ]]
  ```
 
- The vertical columns as you may have already noticed are all the same, this is due to the fact that there is no relation to each other than we are looking for the next best vpw; however there is still some learning to be done, as the ACO needs to find what ones to fit in for 295kg. 
+As you may have already noticed, the vertical columns are all the same. This is due to the fact that they are not related to each other; we are looking for the next best `vpw`. However, there is still some learning to be done, as the ACO needs to find what ones fit in for 295kg. 
