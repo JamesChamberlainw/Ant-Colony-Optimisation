@@ -5,14 +5,21 @@ import csv
 import numpy as np 
 import pandas as pd
 
+# plotting 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 # Ant Colonyy Optimisation (ACO) Parameters (default values used during initial testing and development)
 population = 25                     # population size `p` (number of ants per itteration) 
-evalutations_max = 500     # TODO: revert to 10000 after testing and development is complete 
+evalutations_max = 10000            # maximum number of evaluations / itterations 
 alpha = 1.0                         # Importance of pheromone 
-beta = 2.0                          # Importance of heuristic 
-evaporation_rate = 0.5              # Evaportation Rate                 - should be between 0.5 and 0.95 
-pheromone_deposit_rate = 1.0        # Pheromone Deposit Rate            - should be between [TODO: find out]
-initial_pheromone = 1.0             # Initial Pheromone on Edges (max)  - should be between [TODO: find out] 
+beta = 0.2                         # Importance of heuristic 
+evaporation_rate = 0.6              # Evaportation Rate                 - should be between 0.5 and 0.95 
+pheromone_deposit_rate = 2.0        # Pheromone Deposit Rate            - should be between [TODO: find out]
+initial_pheromone = 1               # Initial Pheromone on Edges (max)  - should be between [TODO: find out] 
+
+# multipliers for fitness values
+bias_to_new_best_solution = 2.0      # bias towards the best solution (default 2.0)
 
 
 def load_data():
@@ -82,16 +89,20 @@ def init_huristic_matrix(size, df = None):
 
     return matrix
 
-def init_pheromone_matrix(size):
+def init_pheromone_matrix(size, initial_pheromone = initial_pheromone):
     """
     Initial pheromone matrix
     
-    size: int number of points
-    
+    size:               int     number of points
+    initial_pheromone:  float   initial pheromone multiplier (default 1.0)
+
     returns: np.array of shape (size, size)
     """
 
-    matrix = np.ones((size, size))
+    # matrix = np.ones((size, size))
+
+    # random values between 0 and 1
+    matrix = np.random.rand(size, size) * initial_pheromone
 
     return matrix
 
@@ -116,7 +127,7 @@ def check_cdf(cdf_row, rand):
     return len(cdf_row) - 1
 
 
-def cdf_generate(pheromone_row, huristic_row, alpha, beta):
+def cdf_generate(pheromone_row, huristic_row, alpha = alpha, beta = beta):
     """
     Combines a row of the pheromone and huristic matrix (all or one row*) so the ant can make movement decisions
     
@@ -138,7 +149,7 @@ def cdf_generate(pheromone_row, huristic_row, alpha, beta):
     return cdf
 
 
-def ant(pheromones, huristics, weights, capacity, alpha = alpha, beta = beta):
+def ant(pheromones, huristics, weights, capacity):
     """ 
         TODO: Add docstring
     """
@@ -164,7 +175,7 @@ def ant(pheromones, huristics, weights, capacity, alpha = alpha, beta = beta):
 
     # ant main loop 
     while weight < capacity:
-        cdf_matrix = cdf_generate(pheromones[bag_id, :], huristics[bag_id, :], alpha, beta)
+        cdf_matrix = cdf_generate(pheromones[bag_id, :], huristics[bag_id, :])
         neu_bag_id = check_cdf(cdf_matrix, np.random.rand())
         if neu_bag_id == -1:
             # error should never happen and if it does occur this is a major issue so raise an error
@@ -186,14 +197,34 @@ def ant(pheromones, huristics, weights, capacity, alpha = alpha, beta = beta):
 
     return solution, deposit
 
-def update_pheromone_matrix(pheromone_matrix, all_deposits, deposit_rate = 1.0):
+def update_pheromone_matrix(pheromone_matrix, all_deposits, fitness, deposit_rate = pheromone_deposit_rate):
     """
-        Update the pheromone matrix based on where the ants have been 
+        Update the pheromone matrix based on where the ants have been
+
+        fitness: % of total fitness for each solution takes up (pre-computed before this function)
+        deposit_rate: the total amount of pheromone to deposit on each node visited (default 1.0)
     """
 
     for deposit in all_deposits:
         for i in range(len(deposit)):
-            pheromone_matrix[deposit[i][0], deposit[i][1]] += deposit_rate
+            pheromone_matrix[deposit[0], deposit[1]] += deposit_rate*fitness
+
+    return pheromone_matrix
+
+def draw_heatmap(matrix):
+    """
+        Draw a heatmap of the matrix
+    """
+
+    sns.heatmap(matrix)
+    plt.show()
+
+def sum_val(solution, values):
+    """
+        Sum the fitness values of the solution
+    """
+
+    return sum([values[i] for i in solution])
 
 """
     Main Testing and Execution Area
@@ -202,6 +233,7 @@ def update_pheromone_matrix(pheromone_matrix, all_deposits, deposit_rate = 1.0):
 df, capacity, data = load_data() 
 
 huristic_matrix = init_huristic_matrix(len(df), df)
+# huristic_matrix = np.ones((len(df), len(df))) # TODO remove this line when huristic matrix is working
 pheromone_matrix = init_pheromone_matrix(len(df))
 
 weights = df['weight'].values
@@ -209,51 +241,83 @@ values = df['value'].values
 
 evaluation_totals = 0
 
+# logging variables 
+best_fitness = 0
+best_solution = []
+best_deposit = []
+
+
+# test_var = True # test variable for testing purposes only (if false testing will hide any left over testing code)
+
 while evaluation_totals < evalutations_max:
-    all_deposits = []
+    fitness_totals = []
+    solutions = []
+    deposits = []
+
+    # matrix = (pheromone_matrix ** alpha) * (huristic_matrix ** beta)
+    # prob_mat = matrix / matrix.sum()
+    # draw_heatmap(prob_mat)
+
+
     for i in range(population):
         solution, deposit = ant(pheromone_matrix.copy(), huristic_matrix.copy(), weights, capacity)
         evaluation_totals += 1 # increment evaluation counter
 
-        all_deposits.append(deposit)
+        # save evluation metrics and logging data 
+        fitness_totals.append(sum_val(solution, values))
+        solutions.append(solution)
+        deposits.append(deposit)
+
+    # TODO if some adjustments are needed to be made to fitness it should be done here 
+    # fitness(fitness_totals) 
+    print("highest fitness in set = ", max(fitness_totals))
+
+    # if the solution is better than all previously found solutions save it 
+    #       plus give greater bias to the best solution in the pheromone matrix
+    if max(fitness_totals) > best_fitness:
+        best_fitness = max(fitness_totals)
+        best_solution = solutions[fitness_totals.index(best_fitness)]
+        best_deposit = deposits[fitness_totals.index(best_fitness)]
+
+        print("\__> new best solution found = ", best_fitness)
+
+        # adding bias to the best solution in the pheromone matrix
+        fitness_totals[fitness_totals.index(best_fitness)] = fitness_totals[fitness_totals.index(best_fitness)] * bias_to_new_best_solution # adds bias to the best solution
+
+
+    # adjust so that deposit ammount is proportional to fitness (to give higher priority to better solutions)
+    fitness_totals = fitness_totals / sum(fitness_totals)
+
+    # print("fitness weight = ", fitness_totals)
 
     # update pheromone matrix
-    update_pheromone_matrix(pheromone_matrix, all_deposits)
+    for i in range(population):
+        pheromone_matrix = update_pheromone_matrix(pheromone_matrix.copy(), deposits[i], fitness_totals[i], pheromone_deposit_rate)
 
     # evaporation
     pheromone_matrix = pheromone_matrix * evaporation_rate
 
-"""
-    Testing 
-"""
+    # pheromone_matrix = update_pheromone_matrix(pheromone_matrix, all_deposits) # TODO adjust for multiple deposits
+    all_deposits = [] # clear deposits
 
-# ignore this function as its for testing purposes only so it will be removed in the final version
-def testing():    
-    # default values 
-    df, capacity, data = load_data() 
 
-    huristic_matrix = init_huristic_matrix(len(df), df)
-    pheromone_matrix = init_pheromone_matrix(len(df))
-    weights = df['weight'].values
-    values = df['value'].values
+print("best solution = ", best_solution)
+print("best fitness = ", best_fitness)
+print("total fitness (re-eval) = ", sum_val(best_solution, values))
+print("total weight of best solution = ", sum([weights[i] for i in best_solution]))
+print("best deposit = ", best_deposit)
+print("total evaluations = ", evaluation_totals)
 
-    # testing cdf_generate
-    cdf = cdf_generate(pheromone_matrix[0, :], huristic_matrix[0, :], alpha, beta)
-    print(cdf)      # array (100, ) 
-    print(cdf[99])  # 1.0 
+print("total weight of all bags = ", sum(weights))
+print("total value of all bags = ", sum(values))
 
-    # testing check_cdf based on cdf_generate
-    print(check_cdf(cdf, 0.9999999999999999)) # 99 (bag 100)
-    print(check_cdf(cdf, 0.0)) # this is row 0 so (0, 0) is 0.0 so it will select (0, 1) (bag 2)
+# using pd.DataFrame 
+weights = df['weight'].values
+values = df['value'].values
 
-    # gen row 1
-    cdf = cdf_generate(pheromone_matrix[1, :], huristic_matrix[1, :], alpha, beta)
-
-    # testing check_cdf based on cdf_generate
-    print(check_cdf(cdf, 0.9999999999999998)) # 99 (bag 100)
-    print(cdf[99])
-    print(check_cdf(cdf, 0.0)) # 0 (bag 1)
-    print(cdf[1])
-    print(check_cdf(cdf, 0.0004177616863296337)) 
-
-    # testing ant function
+# weight against value scatter plot (for visualisation of data)
+plt.scatter(weights, values)
+plt.xlabel('Weight')
+plt.ylabel('Value')
+plt.title('Weight vs Value')
+plt.show()
