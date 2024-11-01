@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 
 # Ant Colonyy Optimisation (ACO) Parameters (default values used during initial testing and development)
-population = 25
-evalutations_max = 10000
-alpha = 1.0                         # Importance of pheromone
-beta = 2.0                          # Importance of heuristic
+population = 25                     # population size `p` (number of ants per itteration) 
+evalutations_max = 10000        
+alpha = 1.0                         # Importance of pheromone 
+beta = 2.0                          # Importance of heuristic 
 evaporation_rate = 0.5              # Evaportation Rate                 - should be between 0.5 and 0.95 
 pheromone_deposit_rate = 1.0        # Pheromone Deposit Rate            - should be between [TODO: find out]
 initial_pheromone = 1.0             # Initial Pheromone on Edges (max)  - should be between [TODO: find out] 
@@ -94,23 +94,6 @@ def init_pheromone_matrix(size):
     matrix = np.ones((size, size))
 
     return matrix
-
-def stop_condition(itter):
-    """
-    Stop condition / Termination Crierion for the algorithm 
-    
-    The termination criterion for this assignment is a total of 10,000 fitness evaluations
-
-    input: int itteration
-
-    returns: bool
-    """
-    # TODO: add local optima check as otherwise this has no reason to be a function 
-
-    if itter < 10000:
-        return True
-    
-    return False
 
 def check_cdf(cdf_row, rand):
     """
@@ -224,11 +207,13 @@ pheromone_matrix = init_pheromone_matrix(len(df))
 weights = df['weight'].values
 values = df['value'].values
 
-while stop_condition(num_iterations):
+evaluation_totals = 0
+
+while evaluation_totals < evalutations_max:
     all_deposits = []
     for i in range(population):
         solution, deposit = ant(pheromone_matrix, huristic_matrix, weights, capacity)
-        # save solution (TODO)
+        evaluation_totals += 1 # increment evaluation counter
 
         all_deposits.append(deposit)
 
