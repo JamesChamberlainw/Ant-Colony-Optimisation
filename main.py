@@ -7,7 +7,7 @@ import pandas as pd
 
 # Ant Colonyy Optimisation (ACO) Parameters (default values used during initial testing and development)
 population = 25                     # population size `p` (number of ants per itteration) 
-evalutations_max = 10000        
+evalutations_max = 500     # TODO: revert to 10000 after testing and development is complete 
 alpha = 1.0                         # Importance of pheromone 
 beta = 2.0                          # Importance of heuristic 
 evaporation_rate = 0.5              # Evaportation Rate                 - should be between 0.5 and 0.95 
@@ -155,9 +155,8 @@ def ant(pheromones, huristics, weights, capacity, alpha = alpha, beta = beta):
     bag_id = np.random.randint(0, 100)  # generates a random number between between 0 <= x < 100 (bag 1-100)
     solution.append(bag_id)
 
-    weight = 0 + weights[bag_id]        # starting weight in van from first bag
+    weight = weights[bag_id]        # starting weight in van from first bag
     
-    print(weight)
 
     # set column to 0 as the ant cannot revisit the same bag
     pheromones[:, bag_id] = 0   # do not revisit the same bag (initial)
@@ -171,7 +170,8 @@ def ant(pheromones, huristics, weights, capacity, alpha = alpha, beta = beta):
             # error should never happen and if it does occur this is a major issue so raise an error
             raise ValueError("Error: check_cdf failed to find a value in the cdf_matrix")
         
-        weight += weights[neu_bag_id] # add the weight of the bag to the van 
+        weight += weights[neu_bag_id]   # add the weight of the bag to the van 
+        weight = round(weight, 1)       # round to 1 decimal place to prevent floating point errors from accumulating (low chance of occurring) 
 
         # if still under capacity add the bag to the solution and deposit pheromone else its been found 
         if weight < capacity:
@@ -212,7 +212,7 @@ evaluation_totals = 0
 while evaluation_totals < evalutations_max:
     all_deposits = []
     for i in range(population):
-        solution, deposit = ant(pheromone_matrix, huristic_matrix, weights, capacity)
+        solution, deposit = ant(pheromone_matrix.copy(), huristic_matrix.copy(), weights, capacity)
         evaluation_totals += 1 # increment evaluation counter
 
         all_deposits.append(deposit)
@@ -222,10 +222,6 @@ while evaluation_totals < evalutations_max:
 
     # evaporation
     pheromone_matrix = pheromone_matrix * evaporation_rate
-
-# solution, deposit = ant(huristic_matrix, pheromone_matrix, weights, capacity)
-
-print(deposit)
 
 """
     Testing 
