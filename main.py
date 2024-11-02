@@ -12,14 +12,14 @@ import matplotlib.pyplot as plt
 # Ant Colonyy Optimisation (ACO) Parameters (default values used during initial testing and development)
 population = 25                     # population size `p` (number of ants per itteration) 
 evalutations_max = 10000            # maximum number of evaluations / itterations 
-alpha = 1.0                         # Importance of pheromone 
-beta = 0.2                         # Importance of heuristic 
-evaporation_rate = 0.6              # Evaportation Rate                 - should be between 0.5 and 0.95 
-pheromone_deposit_rate = 2.0        # Pheromone Deposit Rate            - should be between [TODO: find out]
-initial_pheromone = 1               # Initial Pheromone on Edges (max)  - should be between [TODO: find out] 
+alpha = 0.45                         # Importance of pheromone           - if this is 1 then the algorithm will be heavily biased towards the pheromone
+beta = 0.25                         # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic
+evaporation_rate = 0.5              # Evaportation Rate                 - should be between 0.5 and 0.95 
+pheromone_deposit_rate = 1.0        # Pheromone Deposit Rate        /    - should be between [TODO: find out]
+initial_pheromone = 1               # Initial Pheromone on Edge/s (max)  - should be between [TODO: find out] 
 
 # multipliers for fitness values
-bias_to_new_best_solution = 2.0      # bias towards the best solution (default 2.0)
+bias_to_new_best_solution = 1.0      # bias towards the best solution (default 1.0 - no bias) so nothing is added to the best solution fitness value
 
 
 def load_data():
@@ -230,75 +230,80 @@ def sum_val(solution, values):
     Main Testing and Execution Area
 """
 
-df, capacity, data = load_data() 
+def main():
+    """
+        Main function 
+    """
 
-huristic_matrix = init_huristic_matrix(len(df), df)
-# huristic_matrix = np.ones((len(df), len(df))) # TODO remove this line when huristic matrix is working
-pheromone_matrix = init_pheromone_matrix(len(df))
+    df, capacity, data = load_data() 
 
-weights = df['weight'].values
-values = df['value'].values
+    huristic_matrix = init_huristic_matrix(len(df), df)
+    # huristic_matrix = np.ones((len(df), len(df))) # TODO remove this line when huristic matrix is working
+    pheromone_matrix = init_pheromone_matrix(len(df))
 
-evaluation_totals = 0
+    weights = df['weight'].values
+    values = df['value'].values
 
-# logging variables 
-best_fitness = 0
-best_solution = []
-best_deposit = []
+    evaluation_totals = 0
 
-
-# test_var = True # test variable for testing purposes only (if false testing will hide any left over testing code)
-
-while evaluation_totals < evalutations_max:
-    fitness_totals = []
-    solutions = []
-    deposits = []
-
-    # matrix = (pheromone_matrix ** alpha) * (huristic_matrix ** beta)
-    # prob_mat = matrix / matrix.sum()
-    # draw_heatmap(prob_mat)
+    # logging variables 
+    best_fitness = 0
+    best_solution = []
+    best_deposit = []
 
 
-    for i in range(population):
-        solution, deposit = ant(pheromone_matrix.copy(), huristic_matrix.copy(), weights, capacity)
-        evaluation_totals += 1 # increment evaluation counter
+    # test_var = True # test variable for testing purposes only (if false testing will hide any left over testing code)
 
-        # save evluation metrics and logging data 
-        fitness_totals.append(sum_val(solution, values))
-        solutions.append(solution)
-        deposits.append(deposit)
+    while evaluation_totals < evalutations_max:
+        fitness_totals = []
+        solutions = []
+        deposits = []
 
-    # TODO if some adjustments are needed to be made to fitness it should be done here 
-    # fitness(fitness_totals) 
-    print("highest fitness in set = ", max(fitness_totals))
+        # matrix = (pheromone_matrix ** alpha) * (huristic_matrix ** beta)
+        # prob_mat = matrix / matrix.sum()
+        # draw_heatmap(prob_mat)
 
-    # if the solution is better than all previously found solutions save it 
-    #       plus give greater bias to the best solution in the pheromone matrix
-    if max(fitness_totals) > best_fitness:
-        best_fitness = max(fitness_totals)
-        best_solution = solutions[fitness_totals.index(best_fitness)]
-        best_deposit = deposits[fitness_totals.index(best_fitness)]
+        for i in range(population):
+            solution, deposit = ant(pheromone_matrix.copy(), huristic_matrix.copy(), weights, capacity)
+            evaluation_totals += 1 # increment evaluation counter
 
-        print("\__> new best solution found = ", best_fitness)
+            # save evluation metrics and logging data 
+            fitness_totals.append(sum_val(solution, values))
+            solutions.append(solution)
+            deposits.append(deposit)
 
-        # adding bias to the best solution in the pheromone matrix
-        fitness_totals[fitness_totals.index(best_fitness)] = fitness_totals[fitness_totals.index(best_fitness)] * bias_to_new_best_solution # adds bias to the best solution
+        # TODO if some adjustments are needed to be made to fitness it should be done here 
+        # fitness(fitness_totals) 
+        print("highest fitness in set = ", max(fitness_totals))
+
+        # if the solution is better than all previously found solutions save it 
+        #       plus give greater bias to the best solution in the pheromone matrix
+        if max(fitness_totals) > best_fitness:
+            best_fitness = max(fitness_totals)
+            best_solution = solutions[fitness_totals.index(best_fitness)]
+            best_deposit = deposits[fitness_totals.index(best_fitness)]
+
+            print("\__> new best solution found = ", best_fitness)
+
+            # bias towards the best solution
+            fitness_totals[fitness_totals.index(best_fitness)] = fitness_totals[fitness_totals.index(best_fitness)] * bias_to_new_best_solution # adds bias to the best solution
 
 
-    # adjust so that deposit ammount is proportional to fitness (to give higher priority to better solutions)
-    fitness_totals = fitness_totals / sum(fitness_totals)
+        # adjust so that deposit ammount is proportional to fitness (to give higher priority to better solutions)
+        fitness_totals = fitness_totals / sum(fitness_totals)
 
-    # print("fitness weight = ", fitness_totals)
 
-    # update pheromone matrix
-    for i in range(population):
-        pheromone_matrix = update_pheromone_matrix(pheromone_matrix.copy(), deposits[i], fitness_totals[i], pheromone_deposit_rate)
+        # update pheromone matrix
+        for i in range(population):
+            pheromone_matrix = update_pheromone_matrix(pheromone_matrix.copy(), deposits[i], fitness_totals[i], pheromone_deposit_rate)
 
-    # evaporation
-    pheromone_matrix = pheromone_matrix * evaporation_rate
+        # evaporation
+        pheromone_matrix = pheromone_matrix * evaporation_rate
 
-    # pheromone_matrix = update_pheromone_matrix(pheromone_matrix, all_deposits) # TODO adjust for multiple deposits
-    all_deposits = [] # clear deposits
+    return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals
+
+
+best_solution, best_fitness, best_deposit, values, weights, evaluation_totals = main()
 
 
 print("best solution = ", best_solution)
@@ -311,13 +316,9 @@ print("total evaluations = ", evaluation_totals)
 print("total weight of all bags = ", sum(weights))
 print("total value of all bags = ", sum(values))
 
-# using pd.DataFrame 
-weights = df['weight'].values
-values = df['value'].values
-
 # weight against value scatter plot (for visualisation of data)
-plt.scatter(weights, values)
-plt.xlabel('Weight')
-plt.ylabel('Value')
-plt.title('Weight vs Value')
-plt.show()
+# plt.scatter(weights, values)
+# plt.xlabel('Weight')
+# plt.ylabel('Value')
+# plt.title('Weight vs Value')
+# plt.show()
