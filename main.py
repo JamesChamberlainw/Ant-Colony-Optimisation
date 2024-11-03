@@ -3,7 +3,6 @@
 
 import csv
 import numpy as np 
-import pandas as pd
 
 # plotting 
 import seaborn as sns
@@ -12,9 +11,9 @@ import matplotlib.pyplot as plt
 # Ant Colonyy Optimisation (ACO) Parameters (default values used during initial testing and development)
 population = 10                         # population size `p` (number of ants per generation) 
 evalutations_max = 10000                # maximum number of evaluations / itterations 
-alpha = 1.0                             # Importance of pheromone           - if this is 1 then the algorithm will be heavily biased towards the pheromone
-beta = 1.0                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic
-evaporation_rate = 0.8                  # Evaportation Rate                 - should be between 0.5 and 0.95 
+alpha = 1.0                             # Importance of pheromone           - if this is 1 then the algorithm will be heavily biased towards the pheromone  
+beta = 1.0                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
+evaporation_rate = 0.8                 # Evaportation Rate                 - should be between 0.5 and 0.95 
 pheromone_deposit_rate = 1.0            # Pheromone Deposit Rate - how much pheromone is deposited on the edge based on the fitness of the solution 
 initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - should be between [TODO: find out] 
 
@@ -22,25 +21,31 @@ initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - s
 bias_to_new_best_solution = 1.0        # bias towards the best solution (default 1.0 - no bias) so nothing is added to the best solution fitness value
 
 # diversification & recall mechanics 
-diversification = True                  # diversification (default False) if True then the pheromone matrix is diversified to prevent local optima    
+diversification = True                 # diversification (default False) if True then the pheromone matrix is diversified to prevent local optima    
 diversification_multiplier = 0.2        # multiplier for diversification (0.0 - means no diversification mechanics used)
 diversification_no_change = 10          # number of generations after a optima has been found without any improvements made before diversification is used 
 # NOTE: recall is only used if diversification is enabled
-recall = True                           # recall the best solution found so far to the colony (default False) if diversification fails to find a better solution 
+recall = False                           # recall the best solution found so far to the colony (default False) if diversification fails to find a better solution 
 recall_no_change = 3                    # number of diversification cycles before the best solution is recalled to the colony  # 3 = 30 generations after last optima found before recall is used
 
 # fitness mask - ignore lower fitness values % of the mean fitness value
-fitness_mask_percentage = 0.25
+fitness_mask_percentage = 0.75
 
 def load_data():
     """
     Load in BankProblem.txt, sort text file into useable dataframe
     
-    returns: pd.DataFrame with columns 'weight' and 'value'
-    """
-    df = pd.DataFrame(columns=['weight', 'value'])
 
-    data = []
+    returns: weights, values, capacity:
+    capacity: float             # capacity of the van
+    weights: list of floats     # weights of the bags 
+    values: list of floats      # values of the bags 
+
+    Note: Bag index for weights/values is bag number - 1 (e.g. bag 1 is index 0)
+    """
+
+    weights = []
+    values = []
 
     with open('BankProblem.txt','r') as f:
         reader = csv.reader(f, delimiter = '|')
@@ -55,27 +60,26 @@ def load_data():
         while rows != []:
             rows.pop(0) # drop bag number as its not needed
             weight = float(rows[0][0].split(":")[1].strip())
+            weights.append(weight)
             rows.pop(0) # drop weight
             value = float(rows[0][0].split(":")[1].strip())
+            values.append(value)
             rows.pop(0) # drop value
-
-            data.append([i, weight, value])
-            new_df = pd.DataFrame([[weight, value]], columns=['weight', 'value'])
-            df = pd.concat([df, new_df], ignore_index=True) # Make sure its True as it matches bag index 
             
             i += 1
              
-    return df, capacity, data
+    return weights, values, capacity
 
-def init_huristic_matrix(size, df = None):
+def init_huristic_matrix(size, weight, value):
     """
     Initial huristic matrix 
 
     produces a matrix using the dataset to represent the value per weight ratio (vpw) 
     Note: a distance matrix is not produced as all vertical columns are the same as there is no distance relationship between points
 
-    size: int number of points
-    df: data with columns 'weight' and 'value'
+    size:       int number of points
+    weight:     corresponding weight
+    value:      corresponding value 
     
     returns: np.array of shape (size, size)
     """
@@ -83,19 +87,21 @@ def init_huristic_matrix(size, df = None):
     # default values (in-case something goes wrong) 
     matrix = np.ones((size, size))
 
-    if df is not None:
-        df['vpw'] = df['value']/df['weight']
-        # normalise vpw
-        df['vpw'] = (df['vpw'] - df['vpw'].min()) / (df['vpw'].max() - df['vpw'].min())
+    vpw = [value[i] / weight[i] for i in range(size)]
 
-        # add values into matrix
-        # this feels wrong but there is no better metric to exploit and no distance relation between the points 
-        for i in range(size):
-            for j in range(size):
-                matrix[i][j] = df['vpw'][j]
+    for i in range(size):
+        vpw.append(value[i] / weight[i])
 
-    # cannot revisit itself so diagonal is 0
+    for i in range(size):
+        vpw[i] = (vpw[i] - min(vpw)) / (max(vpw) - min(vpw))
+
+    for i in range(size):
+        for j in range(size):
+            matrix[i][j] = vpw[j]
+
+    # do not revisit the same bag    
     np.fill_diagonal(matrix, 0) 
+
 
     return matrix
 
@@ -109,10 +115,10 @@ def init_pheromone_matrix(size, initial_pheromone = initial_pheromone):
     returns: np.array of shape (size, size)
     """
 
-    matrix = np.ones((size, size))
+    # matrix = np.ones((size, size)) * initial_pheromone
 
     # random values between 0 and 1
-    # matrix = np.random.rand(size, size) * initial_pheromone
+    matrix = np.random.rand(size, size) * initial_pheromone
 
     return matrix
 
@@ -237,24 +243,20 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         Main function 
     """
 
-    df, capacity, data = load_data() 
+    weights, values, capacity = load_data() 
 
-    if huristic_matrix is None or huristic_matrix.shape != (100, 100) and pheromone_matrix.shape != (100, 100):
+    if huristic_matrix is None or pheromone_matrix is None:
         # default is to use the huristic matrix and pheromone matrix based upon the dataset BankProblem.txt 
         # if testing with a differnt dataset e.g. np.ones((100, 100)) and np.ones((100, 100)) can be entered as the huristic_matrix and pheromone_matrix - takes longer to converge
-        huristic_matrix = init_huristic_matrix(len(df), df)
-        pheromone_matrix = init_pheromone_matrix(len(df))
-    else :
+        huristic_matrix = init_huristic_matrix(100, weights, values)
+        pheromone_matrix = init_pheromone_matrix(100)
+    elif huristic_matrix.shape != (100, 100) and pheromone_matrix.shape != (100, 100):
         raise ValueError("Error: huristic_matrix and-or pheromone_matrix is not the correct shape (100, 100)")
-
-    weights = df['weight'].values
-    values = df['value'].values
 
     evaluation_totals = 0
 
-    # DEBUGGING
-    additonal_1000_fit = None
-    additional_1000_sol = None
+    # DEBUG
+    best_solution_ot = []
 
     # logging variables 
     best_fitness = 0
@@ -283,6 +285,7 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
             deposits.append(deposit)
 
         [print("highest fitness in set = ", max(fitness_totals)) if debug_print else None]
+        best_solution_ot.append(max(fitness_totals))
 
         if max(fitness_totals) > best_fitness:
             best_fitness = max(fitness_totals)
@@ -303,10 +306,6 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         elif diversification and diversification_counter > diversification_no_change:
             # diversification
             [print("\__> diversification") if debug_print else None]
-            diversification_counter = 0 # rest diversification counter 
-
-            salt = np.random.rand(100, 100) * diversification_multiplier # random salting between 0 an 1 * multiplier
-            pheromone_matrix = pheromone_matrix + salt # add together to diversify the pheromone matrix
 
             if recall and recall_counter >= recall_no_change:
                 [print("\__> recall") if debug_print else None]
@@ -317,6 +316,13 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
                 recall_counter = 0 # reset recall counter
             else:
                 recall_counter += 1   
+
+            diversification_counter = 0 # rest diversification counter 
+
+            salt = np.random.rand(100, 100) * diversification_multiplier # random salting between 0 an 1 * multiplier
+            pheromone_matrix = pheromone_matrix + salt # add together to diversify the pheromone matrix
+            np.fill_diagonal(pheromone_matrix, 0) # do not revisit the same bag
+
         else:
             diversification_counter += 1
 
@@ -325,20 +331,32 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         fitness_totals = [i if i > fitness_mask else 0 for i in fitness_totals] # if worse than fitness mean then set to 0 
 
         # adjust so that deposit ammount is proportional to fitness (to give higher priority to better solutions)
-        fitness_totals = fitness_totals / sum(fitness_totals)
+        # fitness_totals = fitness_totals / sum(fitness_totals)
+        _sum = sum(fitness_totals)
+        fitness_totals = [fitness_totals[i] * _sum for i in range(len(fitness_totals))]
 
-        # update pheromone matrix
+
+        # update pheromone matrix evaporated \tau_{ij} + \Delta\tau_{ij}
         for i in range(population):
             pheromone_matrix = update_pheromone_matrix(pheromone_matrix.copy(), deposits[i], fitness_totals[i], pheromone_deposit_rate)
 
+        # if repeated solution then a problem has occured throw error
+        for each in solutions:
+            if solutions.count(each) > 1: # itself is in there so if its greater than 1 then its repeated
+                raise ValueError("Error: repeated solution found")
+
         # evaporation
+        # perform evaporation (1 - p)\tau_{ij}
         pheromone_matrix = pheromone_matrix * evaporation_rate
 
-        if evaluation_totals == 1000:
-            additional_1000_sol = best_solution
-            additonal_1000_fit = best_fitness
+    # plot best in each run over time 
+    plt.plot(range(len(best_solution_ot)), best_solution_ot)
+    plt.xlabel('Generation')
+    plt.ylabel('Best Fitness')
+    plt.title('Best Fitness over Generations')
+    plt.show()
 
-    return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, additional_1000_sol, additonal_1000_fit
+    return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals
 
 """
     Plotting functions 
@@ -395,13 +413,10 @@ def select_raondom(display = False):
         Select a random solution to test the ant function
     """
 
-    df, capacity, data = load_data() 
+    weights, values, capacity = load_data() 
 
     huristic_matrix = np.ones((100, 100)) 
     pheromone_matrix =  np.ones((100, 100))
-
-    weights = df['weight'].values
-    values = df['value'].values
 
     solution, _ = ant(pheromone_matrix.copy(), huristic_matrix.copy(), weights, capacity)
 
@@ -418,31 +433,50 @@ def select_raondom(display = False):
     Initialisation
 """
 
+xX = np.ones((100, 100))
+yY = np.ones((100, 100))
 
-best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, additional_1000_sol, additonal_1000_fit = main()
+xX = None
+yY = None
+
+best_solution, best_fitness, best_deposit, values, weights, evaluation_totals = main(xX, yY, True)
 
 print("best solution = ", best_solution)
 print("best fitness = ", best_fitness)
-print("total fitness (re-eval) = ", sum_val(best_solution, values))
+# print("total fitness (re-eval) = ", sum_val(best_solution, values))
 print("total weight of best solution = ", sum([weights[i] for i in best_solution]))
 print("best deposit = ", best_deposit)
 print("total evaluations = ", evaluation_totals)
 
-print("total weight of all bags = ", sum(weights))
-print("total value of all bags = ", sum(values))
+# print("total weight of all bags = ", sum(weights))
+# print("total value of all bags = ", sum(values))
 
 draw_val_weight_scatter(weights, values, best_solution)
 
-print("additional 1000 solution = ", additional_1000_sol)
-print("additional 1000 fitness = ", additonal_1000_fit)
-print("total fitness (re-eval) = ", sum_val(additional_1000_sol, values))
-print("total weight of additional 1000 solution = ", sum([weights[i] for i in additional_1000_sol]))
 
-draw_val_weight_scatter(weights, values, additional_1000_sol, title="At 1000 solution findings")
+# diversification_values0to50 = []
+# evalutations_max = 1000
 
+# testing diversification
+# for i in range(50):
+#     diversification_no_change = i
 
+#     values = []
 
-# select_raondom() # testing function
-# select_raondom() # testing function
-# select_raondom() # testing function
-# select_raondom() # testing function
+#     # test multiple times to get an average to reduce the effect of randomness
+#     for j in range(5):
+#         best_solution, best_fitness, best_deposit, _values, _weights, _evaluation_totals = main()
+#         values.append(best_fitness)
+
+#     best_fitness = sum(values) / len(values)
+
+#     print("diversification_no_change = ", i)
+#     print("best solution = ", best_fitness)
+
+#     diversification_values0to50.append(best_fitness)
+
+# plt.scatter(range(50), diversification_values0to50, label='diversification_no_change vs best fitness')
+# plt.xlabel('range')
+# plt.ylabel('fitness average (10 runs)')
+# plt.title('diversification_no_change vs best fitness')
+# plt.show()
