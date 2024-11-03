@@ -22,12 +22,16 @@ initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - s
 bias_to_new_best_solution = 1.0        # bias towards the best solution (default 1.0 - no bias) so nothing is added to the best solution fitness value
 
 # diversification & recall mechanics 
-diversification = True                 # diversification (default False) if True then the pheromone matrix is diversified to prevent local optima    
+diversification = True                  # diversification (default False) if True then the pheromone matrix is diversified to prevent local optima    
 diversification_multiplier = 0.2        # multiplier for diversification (0.0 - means no diversification mechanics used)
 diversification_no_change = 10          # number of generations after a optima has been found without any improvements made before diversification is used 
 # NOTE: recall is only used if diversification is enabled
 recall = True                           # recall the best solution found so far to the colony (default False) if diversification fails to find a better solution 
 recall_no_change = 3                    # number of diversification cycles before the best solution is recalled to the colony  # 3 = 30 generations after last optima found before recall is used
+
+# fitness mask - ignore lower fitness values % of the mean fitness value
+fitness_mask_percentage = 0.25
+
 def load_data():
     """
     Load in BankProblem.txt, sort text file into useable dataframe
@@ -228,21 +232,29 @@ def sum_val(solution, values):
     Main Testing and Execution Area
 """
 
-def main():
+def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
     """
         Main function 
     """
 
     df, capacity, data = load_data() 
 
-    huristic_matrix = init_huristic_matrix(len(df), df)
-    # huristic_matrix = np.ones((len(df), len(df))) # TODO remove this line when huristic matrix is working
-    pheromone_matrix = init_pheromone_matrix(len(df))
+    if huristic_matrix is None or huristic_matrix.shape != (100, 100) and pheromone_matrix.shape != (100, 100):
+        # default is to use the huristic matrix and pheromone matrix based upon the dataset BankProblem.txt 
+        # if testing with a differnt dataset e.g. np.ones((100, 100)) and np.ones((100, 100)) can be entered as the huristic_matrix and pheromone_matrix - takes longer to converge
+        huristic_matrix = init_huristic_matrix(len(df), df)
+        pheromone_matrix = init_pheromone_matrix(len(df))
+    else :
+        raise ValueError("Error: huristic_matrix and-or pheromone_matrix is not the correct shape (100, 100)")
 
     weights = df['weight'].values
     values = df['value'].values
 
     evaluation_totals = 0
+
+    # DEBUGGING
+    additonal_1000_fit = None
+    additional_1000_sol = None
 
     # logging variables 
     best_fitness = 0
@@ -251,7 +263,6 @@ def main():
 
     best_pheromone_matrix = pheromone_matrix.copy()
     best_huristic_matrix = huristic_matrix.copy()
-
 
     # diversification variables
     diversification_counter = 0
@@ -271,7 +282,7 @@ def main():
             solutions.append(solution)
             deposits.append(deposit)
 
-        print("highest fitness in set = ", max(fitness_totals))
+        [print("highest fitness in set = ", max(fitness_totals)) if debug_print else None]
 
         if max(fitness_totals) > best_fitness:
             best_fitness = max(fitness_totals)
@@ -280,7 +291,7 @@ def main():
             best_pheromone_matrix = pheromone_matrix.copy()
             best_huristic_matrix = huristic_matrix.copy()
 
-            print("\__> new best solution found = ", best_fitness)
+            [print("\__> new best solution found = ", best_fitness) if debug_print else None]
 
             # bias towards the best solution
             fitness_totals[fitness_totals.index(best_fitness)] = fitness_totals[fitness_totals.index(best_fitness)] * bias_to_new_best_solution # (default 1.0 - no bias)
@@ -291,14 +302,14 @@ def main():
 
         elif diversification and diversification_counter > diversification_no_change:
             # diversification
-            print("\__> diversification")
+            [print("\__> diversification") if debug_print else None]
             diversification_counter = 0 # rest diversification counter 
 
             salt = np.random.rand(100, 100) * diversification_multiplier # random salting between 0 an 1 * multiplier
             pheromone_matrix = pheromone_matrix + salt # add together to diversify the pheromone matrix
 
             if recall and recall_counter >= recall_no_change:
-                print("\__> recall")
+                [print("\__> recall") if debug_print else None]
 
                 # Here the best solution is recalled and scaled back 
                 pheromone_matrix = best_pheromone_matrix.copy() / best_pheromone_matrix.copy().sum()     # adjusted so pheromone matrix is between 0 and 1 
@@ -309,14 +320,12 @@ def main():
         else:
             diversification_counter += 1
 
-        # adjust values so that it favours the better solutions (higher fitness)
-        # ignore the lower fitness values and drop from the pool 
-        # fitness_mean = sum(fitness_totals) / len(fitness_totals)
-        # fitness_totals = [i if i > fitness_mean else 0 for i in fitness_totals] # if worse than fitness mean then set to 0 
+        # mask for ignoring lower fitness values
+        fitness_mask = min(fitness_totals) + (fitness_mask_percentage * (max(fitness_totals) - min(fitness_totals))) 
+        fitness_totals = [i if i > fitness_mask else 0 for i in fitness_totals] # if worse than fitness mean then set to 0 
 
         # adjust so that deposit ammount is proportional to fitness (to give higher priority to better solutions)
         fitness_totals = fitness_totals / sum(fitness_totals)
-
 
         # update pheromone matrix
         for i in range(population):
@@ -325,14 +334,18 @@ def main():
         # evaporation
         pheromone_matrix = pheromone_matrix * evaporation_rate
 
-    return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals
+        if evaluation_totals == 1000:
+            additional_1000_sol = best_solution
+            additonal_1000_fit = best_fitness
+
+    return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, additional_1000_sol, additonal_1000_fit
 
 """
     Plotting functions 
         a list of functions to plot the data in various ways
 """
 
-def draw_val_weight_scatter(weights, values, best_solution=[]):
+def draw_val_weight_scatter(weights, values, best_solution=[], title = 'Weight vs Value'):
     """
         Draws a scatter plot highlighting the best solution as green and unselected as red
 
@@ -359,7 +372,7 @@ def draw_val_weight_scatter(weights, values, best_solution=[]):
     plt.scatter(weights, values, color='red')                       # not selected (default colour)
     plt.xlabel('Weight')
     plt.ylabel('Value')
-    plt.title('Weight vs Value')
+    plt.title(title)
     plt.show()
 
 def draw_heatmap(matrix):
@@ -406,7 +419,7 @@ def select_raondom(display = False):
 """
 
 
-best_solution, best_fitness, best_deposit, values, weights, evaluation_totals = main()
+best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, additional_1000_sol, additonal_1000_fit = main()
 
 print("best solution = ", best_solution)
 print("best fitness = ", best_fitness)
@@ -419,6 +432,15 @@ print("total weight of all bags = ", sum(weights))
 print("total value of all bags = ", sum(values))
 
 draw_val_weight_scatter(weights, values, best_solution)
+
+print("additional 1000 solution = ", additional_1000_sol)
+print("additional 1000 fitness = ", additonal_1000_fit)
+print("total fitness (re-eval) = ", sum_val(additional_1000_sol, values))
+print("total weight of additional 1000 solution = ", sum([weights[i] for i in additional_1000_sol]))
+
+draw_val_weight_scatter(weights, values, additional_1000_sol, title="At 1000 solution findings")
+
+
 
 # select_raondom() # testing function
 # select_raondom() # testing function
