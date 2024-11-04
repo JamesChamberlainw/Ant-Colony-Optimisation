@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 population = 10                         # population size `p` (number of ants per generation) 
 evalutations_max = 10000                # maximum number of evaluations / itterations 
 alpha = 1.0                             # Importance of pheromone           - if this is 1 then the algorithm will be heavily biased towards the pheromone  
-beta = 1.0                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
+beta = 0.25                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
 evaporation_rate = 0.8                 # Evaportation Rate                 - should be between 0.5 and 0.95 
 pheromone_deposit_rate = 1.0            # Pheromone Deposit Rate - how much pheromone is deposited on the edge based on the fitness of the solution 
 initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - should be between [TODO: find out] 
