@@ -46,9 +46,6 @@ def load_data():
 
         capacity = float(rows[0][0].split(":")[1].strip())
         rows.pop(0) # drop the first row (capacity)
-
-        # bag index (for those too lazy to count or add one during operations aka me)
-        i = 1 
         
         while rows != []:
             rows.pop(0) # drop bag number as its not needed
@@ -58,8 +55,6 @@ def load_data():
             value = float(rows[0][0].split(":")[1].strip())
             values.append(value)
             rows.pop(0) # drop value
-            
-            i += 1
              
     return weights, values, capacity
 
