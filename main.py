@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 population = 10                         # population size `p` (number of ants per generation) 
 evalutations_max = 10000                # maximum number of evaluations / itterations 
 alpha = 1.0                             # Importance of pheromone           - if this is 1 then the algorithm will be heavily biased towards the pheromone  
-beta = 0.25                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
+beta = 1.0                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
 evaporation_rate = 0.8                 # Evaportation Rate                 - should be between 0.5 and 0.95 
 pheromone_deposit_rate = 1.0            # Pheromone Deposit Rate - how much pheromone is deposited on the edge based on the fitness of the solution 
 initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - should be between [TODO: find out] 
@@ -26,10 +26,10 @@ diversification_multiplier = 0.2        # multiplier for diversification (0.0 - 
 diversification_no_change = 10          # number of generations after a optima has been found without any improvements made before diversification is used 
 # NOTE: recall is only used if diversification is enabled
 recall = False                           # recall the best solution found so far to the colony (default False) if diversification fails to find a better solution 
-recall_no_change = 3                    # number of diversification cycles before the best solution is recalled to the colony  # 3 = 30 generations after last optima found before recall is used
+recall_no_change = 2                    # number of diversification cycles before the best solution is recalled to the colony  # 3 = 30 generations after last optima found before recall is used
 
 # fitness mask - ignore lower fitness values % of the mean fitness value
-fitness_mask_percentage = 0.75
+fitness_mask_percentage = 0.5
 
 def load_data():
     """
@@ -85,7 +85,7 @@ def init_huristic_matrix(size, weight, value):
     """
     
     # default values (in-case something goes wrong) 
-    matrix = np.ones((size, size))
+    matrix = np.zeros((size, size))
 
     vpw = [value[i] / weight[i] for i in range(size)]
 
@@ -114,8 +114,6 @@ def init_pheromone_matrix(size, initial_pheromone = initial_pheromone):
 
     returns: np.array of shape (size, size)
     """
-
-    # matrix = np.ones((size, size)) * initial_pheromone
 
     # random values between 0 and 1
     matrix = np.random.rand(size, size) * initial_pheromone
@@ -433,13 +431,7 @@ def select_raondom(display = False):
     Initialisation
 """
 
-xX = np.ones((100, 100))
-yY = np.ones((100, 100))
-
-xX = None
-yY = None
-
-best_solution, best_fitness, best_deposit, values, weights, evaluation_totals = main(xX, yY, True)
+best_solution, best_fitness, best_deposit, values, weights, evaluation_totals = main(True)
 
 print("best solution = ", best_solution)
 print("best fitness = ", best_fitness)
@@ -480,3 +472,12 @@ draw_val_weight_scatter(weights, values, best_solution)
 # plt.ylabel('fitness average (10 runs)')
 # plt.title('diversification_no_change vs best fitness')
 # plt.show()
+
+# weights, values, capacity = load_data() 
+
+# solution = select_raondom()
+
+# draw_val_weight_scatter(weights, values, solution)
+
+# print("total value of solution = ", sum_val(solution, values))
+
