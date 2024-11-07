@@ -254,9 +254,6 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
     best_solution = []
     best_deposit = []
 
-    # best_pheromone_matrix = pheromone_matrix.copy()
-    # best_huristic_matrix = huristic_matrix.copy()
-
     while evaluation_totals < evalutations_max:
         fitness_totals = []
         solutions = []
@@ -285,33 +282,7 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
 
             # bias towards the best solution
             fitness_totals[fitness_totals.index(best_fitness)] = fitness_totals[fitness_totals.index(best_fitness)] * bias_to_new_best_solution # (default 1.0 - no bias)
-            
-            # reset counters
-            diversification_counter = 0
-            recall_counter = 0
 
-        # elif diversification and diversification_counter > diversification_no_change:
-        #     # diversification
-        #     [print("\__> diversification") if debug_print else None]
-
-        #     if recall and recall_counter >= recall_no_change:
-        #         [print("\__> recall") if debug_print else None]
-
-        #         # Here the best solution is recalled and scaled back 
-        #         pheromone_matrix = best_pheromone_matrix.copy() / best_pheromone_matrix.copy().sum()     # adjusted so pheromone matrix is between 0 and 1 
-        #         huristic_matrix = best_huristic_matrix.copy()                                            # this will increases the huristic value of the best solution
-        #         recall_counter = 0 # reset recall counter
-        #     else:
-        #         recall_counter += 1   
-
-        #     diversification_counter = 0 # rest diversification counter 
-
-        #     salt = np.random.rand(100, 100) * diversification_multiplier # random salting between 0 an 1 * multiplier
-        #     pheromone_matrix = pheromone_matrix + salt # add together to diversify the pheromone matrix
-        #     np.fill_diagonal(pheromone_matrix, 0) # do not revisit the same bag
-
-        # else:
-            # diversification_counter += 1
 
         # mask for ignoring lower fitness values
         fitness_mask = min(fitness_totals) + (fitness_mask_percentage * (max(fitness_totals) - min(fitness_totals))) 
