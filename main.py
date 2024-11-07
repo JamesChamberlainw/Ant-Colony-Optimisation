@@ -13,20 +13,13 @@ population = 10                         # population size `p` (number of ants pe
 evalutations_max = 10000                # maximum number of evaluations / itterations 
 alpha = 1.0                             # Importance of pheromone           - if this is 1 then the algorithm will be heavily biased towards the pheromone  
 beta = 1.0                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
-evaporation_rate = 0.8                 # Evaportation Rate                 - should be between 0.5 and 0.95 
+tau_max = 1.0                           # Maximum Pheromone Value           - if pheromone exceeds this rescale OR clip back to value
+evaporation_rate = 0.95                 # Evaportation Rate                 - should be between 0.5 and 0.95 
 pheromone_deposit_rate = 1.0            # Pheromone Deposit Rate - how much pheromone is deposited on the edge based on the fitness of the solution 
 initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - should be between [TODO: find out] 
 
 # multipliers for fitness values
 bias_to_new_best_solution = 1.0        # bias towards the best solution (default 1.0 - no bias) so nothing is added to the best solution fitness value
-
-# diversification & recall mechanics 
-diversification = True                 # diversification (default False) if True then the pheromone matrix is diversified to prevent local optima    
-diversification_multiplier = 0.2        # multiplier for diversification (0.0 - means no diversification mechanics used)
-diversification_no_change = 10          # number of generations after a optima has been found without any improvements made before diversification is used 
-# NOTE: recall is only used if diversification is enabled
-recall = False                           # recall the best solution found so far to the colony (default False) if diversification fails to find a better solution 
-recall_no_change = 2                    # number of diversification cycles before the best solution is recalled to the colony  # 3 = 30 generations after last optima found before recall is used
 
 # fitness mask - ignore lower fitness values % of the mean fitness value
 fitness_mask_percentage = 0.5
@@ -261,12 +254,8 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
     best_solution = []
     best_deposit = []
 
-    best_pheromone_matrix = pheromone_matrix.copy()
-    best_huristic_matrix = huristic_matrix.copy()
-
-    # diversification variables
-    diversification_counter = 0
-    recall_counter = 0
+    # best_pheromone_matrix = pheromone_matrix.copy()
+    # best_huristic_matrix = huristic_matrix.copy()
 
     while evaluation_totals < evalutations_max:
         fitness_totals = []
@@ -301,28 +290,28 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
             diversification_counter = 0
             recall_counter = 0
 
-        elif diversification and diversification_counter > diversification_no_change:
-            # diversification
-            [print("\__> diversification") if debug_print else None]
+        # elif diversification and diversification_counter > diversification_no_change:
+        #     # diversification
+        #     [print("\__> diversification") if debug_print else None]
 
-            if recall and recall_counter >= recall_no_change:
-                [print("\__> recall") if debug_print else None]
+        #     if recall and recall_counter >= recall_no_change:
+        #         [print("\__> recall") if debug_print else None]
 
-                # Here the best solution is recalled and scaled back 
-                pheromone_matrix = best_pheromone_matrix.copy() / best_pheromone_matrix.copy().sum()     # adjusted so pheromone matrix is between 0 and 1 
-                huristic_matrix = best_huristic_matrix.copy()                                            # this will increases the huristic value of the best solution
-                recall_counter = 0 # reset recall counter
-            else:
-                recall_counter += 1   
+        #         # Here the best solution is recalled and scaled back 
+        #         pheromone_matrix = best_pheromone_matrix.copy() / best_pheromone_matrix.copy().sum()     # adjusted so pheromone matrix is between 0 and 1 
+        #         huristic_matrix = best_huristic_matrix.copy()                                            # this will increases the huristic value of the best solution
+        #         recall_counter = 0 # reset recall counter
+        #     else:
+        #         recall_counter += 1   
 
-            diversification_counter = 0 # rest diversification counter 
+        #     diversification_counter = 0 # rest diversification counter 
 
-            salt = np.random.rand(100, 100) * diversification_multiplier # random salting between 0 an 1 * multiplier
-            pheromone_matrix = pheromone_matrix + salt # add together to diversify the pheromone matrix
-            np.fill_diagonal(pheromone_matrix, 0) # do not revisit the same bag
+        #     salt = np.random.rand(100, 100) * diversification_multiplier # random salting between 0 an 1 * multiplier
+        #     pheromone_matrix = pheromone_matrix + salt # add together to diversify the pheromone matrix
+        #     np.fill_diagonal(pheromone_matrix, 0) # do not revisit the same bag
 
-        else:
-            diversification_counter += 1
+        # else:
+            # diversification_counter += 1
 
         # mask for ignoring lower fitness values
         fitness_mask = min(fitness_totals) + (fitness_mask_percentage * (max(fitness_totals) - min(fitness_totals))) 
@@ -333,10 +322,12 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         _sum = sum(fitness_totals)
         fitness_totals = [fitness_totals[i] * _sum for i in range(len(fitness_totals))]
 
-
         # update pheromone matrix evaporated \tau_{ij} + \Delta\tau_{ij}
         for i in range(population):
             pheromone_matrix = update_pheromone_matrix(pheromone_matrix.copy(), deposits[i], fitness_totals[i], pheromone_deposit_rate)
+
+        # τ_{max} theromone max value is 1.0
+        pheromone_matrix = np.clip(pheromone_matrix, 0, tau_max)
 
         # if repeated solution then a problem has occured throw error
         for each in solutions:
@@ -440,44 +431,4 @@ print("total weight of best solution = ", sum([weights[i] for i in best_solution
 print("best deposit = ", best_deposit)
 print("total evaluations = ", evaluation_totals)
 
-# print("total weight of all bags = ", sum(weights))
-# print("total value of all bags = ", sum(values))
-
 draw_val_weight_scatter(weights, values, best_solution)
-
-
-# diversification_values0to50 = []
-# evalutations_max = 1000
-
-# testing diversification
-# for i in range(50):
-#     diversification_no_change = i
-
-#     values = []
-
-#     # test multiple times to get an average to reduce the effect of randomness
-#     for j in range(5):
-#         best_solution, best_fitness, best_deposit, _values, _weights, _evaluation_totals = main()
-#         values.append(best_fitness)
-
-#     best_fitness = sum(values) / len(values)
-
-#     print("diversification_no_change = ", i)
-#     print("best solution = ", best_fitness)
-
-#     diversification_values0to50.append(best_fitness)
-
-# plt.scatter(range(50), diversification_values0to50, label='diversification_no_change vs best fitness')
-# plt.xlabel('range')
-# plt.ylabel('fitness average (10 runs)')
-# plt.title('diversification_no_change vs best fitness')
-# plt.show()
-
-# weights, values, capacity = load_data() 
-
-# solution = select_raondom()
-
-# draw_val_weight_scatter(weights, values, solution)
-
-# print("total value of solution = ", sum_val(solution, values))
-
