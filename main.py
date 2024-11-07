@@ -78,12 +78,12 @@ def init_huristic_matrix(size, weight, value):
     # calculate the value per weight ratio (vpw) for each bag
     vpw = [value[i] / weight[i] for i in range(size)]
 
-    for i in range(size):
-        vpw.append(value[i] / weight[i])
+    _max = max(vpw)
+    _min = min(vpw)
 
-    # standardise the vpw values between 0.0 and 1.0 (will not sum to 1.0)
+    # standardise between 0.0 and 1.0
     for i in range(size):
-        vpw[i] = (vpw[i] - min(vpw)) / (max(vpw) - min(vpw))
+        vpw[i] = (vpw[i] - _min) / (_max - _min)
 
     for i in range(size):
         for j in range(size):
@@ -91,6 +91,8 @@ def init_huristic_matrix(size, weight, value):
 
     # do not revisit the same bag    
     np.fill_diagonal(matrix, 0) 
+
+    draw_heatmap(matrix)
 
     return matrix
 
@@ -154,7 +156,16 @@ def cdf_generate(pheromone_row, huristic_row, alpha = alpha, beta = beta):
 
 def ant(pheromones, huristics, weights, capacity):
     """ 
-        TODO: Add docstring
+        Ant function to perform a single search up till capacity is reached
+
+        pheromones: np.array of shape (size, size)    pheromone matrix
+        huristics: np.array of shape (size, size)     huristic matrix
+        weights: list of floats                       weights of the bags
+        capacity: float                               capacity of the van
+
+        returns: solution, deposit
+        solution: list of ints                         id of the bags selected by the ant # this is -1 to the value
+        deposit: list of lists                         id of positions visited by the ant
     """
 
     # Error checking
