@@ -75,11 +75,13 @@ def init_huristic_matrix(size, weight, value):
     # default values (in-case something goes wrong) 
     matrix = np.zeros((size, size))
 
+    # calculate the value per weight ratio (vpw) for each bag
     vpw = [value[i] / weight[i] for i in range(size)]
 
     for i in range(size):
         vpw.append(value[i] / weight[i])
 
+    # standardise the vpw values between 0.0 and 1.0 (will not sum to 1.0)
     for i in range(size):
         vpw[i] = (vpw[i] - min(vpw)) / (max(vpw) - min(vpw))
 
@@ -89,7 +91,6 @@ def init_huristic_matrix(size, weight, value):
 
     # do not revisit the same bag    
     np.fill_diagonal(matrix, 0) 
-
 
     return matrix
 
