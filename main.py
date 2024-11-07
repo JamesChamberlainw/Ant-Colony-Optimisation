@@ -12,17 +12,17 @@ import matplotlib.pyplot as plt
 population = 10                         # population size `p` (number of ants per generation) 
 evalutations_max = 10000                # maximum number of evaluations / itterations 
 alpha = 1.0                             # Importance of pheromone           - if this is 1 then the algorithm will be heavily biased towards the pheromone  
-beta = 1.0                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
+beta = 2.0                              # Importance of heuristic           - if this is 1 then the algorithm will be heavily biased towards the heuristic  if 1.0 and 1.0 for both then its 50:50
+tau = 1.0                               # Pheromone Deposit Rate 
 tau_max = 1.0                           # Maximum Pheromone Value           - if pheromone exceeds this rescale OR clip back to value
 evaporation_rate = 0.95                 # Evaportation Rate                 - should be between 0.5 and 0.95 
-pheromone_deposit_rate = 1.0            # Pheromone Deposit Rate - how much pheromone is deposited on the edge based on the fitness of the solution 
 initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - should be between [TODO: find out] 
 
 # multipliers for fitness values
-bias_to_new_best_solution = 1.0        # bias towards the best solution (default 1.0 - no bias) so nothing is added to the best solution fitness value
+bias_to_new_best_solution = 2.0        # bias towards the best solution (default 1.0 - no bias) so nothing is added to the best solution fitness value
 
 # fitness mask - ignore lower fitness values % of the mean fitness value
-fitness_mask_percentage = 0.5
+fitness_mask_percentage = .8
 
 def load_data():
     """
@@ -204,7 +204,7 @@ def ant(pheromones, huristics, weights, capacity):
 
     return solution, deposit
 
-def update_pheromone_matrix(pheromone_matrix, all_deposits, fitness, deposit_rate = pheromone_deposit_rate):
+def update_pheromone_matrix(pheromone_matrix, all_deposits, fitness, deposit_rate = tau):
     """
         Update the pheromone matrix based on where the ants have been
 
@@ -295,7 +295,7 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
 
         # update pheromone matrix evaporated \tau_{ij} + \Delta\tau_{ij}
         for i in range(population):
-            pheromone_matrix = update_pheromone_matrix(pheromone_matrix.copy(), deposits[i], fitness_totals[i], pheromone_deposit_rate)
+            pheromone_matrix = update_pheromone_matrix(pheromone_matrix.copy(), deposits[i], fitness_totals[i], tau)
 
         # τ_{max} theromone max value is 1.0
         pheromone_matrix = np.clip(pheromone_matrix, 0, tau_max)
@@ -399,7 +399,7 @@ print("best solution = ", best_solution)
 print("best fitness = ", best_fitness)
 # print("total fitness (re-eval) = ", sum_val(best_solution, values))
 print("total weight of best solution = ", sum([weights[i] for i in best_solution]))
-print("best deposit = ", best_deposit)
+# print("best deposit = ", best_deposit)
 print("total evaluations = ", evaluation_totals)
 
 draw_val_weight_scatter(weights, values, best_solution)
