@@ -397,9 +397,7 @@ best_solution, best_fitness, best_deposit, values, weights, evaluation_totals = 
 
 print("best solution = ", best_solution)
 print("best fitness = ", best_fitness)
-# print("total fitness (re-eval) = ", sum_val(best_solution, values))
 print("total weight of best solution = ", sum([weights[i] for i in best_solution]))
-# print("best deposit = ", best_deposit)
 print("total evaluations = ", evaluation_totals)
 
 draw_val_weight_scatter(weights, values, best_solution)
