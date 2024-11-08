@@ -18,11 +18,8 @@ tau_max = 1.0                           # Maximum Pheromone Value           - if
 evaporation_rate = 0.95                 # Evaportation Rate                 - should be between 0.5 and 0.95 
 initial_pheromone = 1.0                 # Initial Pheromone on Edge/s (max)  - should be between [TODO: find out] 
 
-# multipliers for fitness values
-bias_to_new_best_solution = 2.0        # bias towards the best solution (default 1.0 - no bias) so nothing is added to the best solution fitness value
-
-# fitness mask - ignore lower fitness values % of the mean fitness value
-fitness_mask_percentage = .8
+# fitness mask - percentage kept for next generation 0/1 binary selection 
+fitness_mask_percentage = 0.2
 
 def load_data():
     """
@@ -91,8 +88,6 @@ def init_huristic_matrix(size, weight, value):
 
     # do not revisit the same bag    
     np.fill_diagonal(matrix, 0) 
-
-    draw_heatmap(matrix)
 
     return matrix
 
@@ -215,6 +210,7 @@ def update_pheromone_matrix(pheromone_matrix, all_deposits, fitness, deposit_rat
     """
         Update the pheromone matrix based on where the ants have been
 
+        inputs:
         fitness: % of total fitness for each solution takes up (pre-computed before this function)
         deposit_rate: the total amount of pheromone to deposit on each node visited (default 1.0)
     """
@@ -282,13 +278,8 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
             best_fitness = max(fitness_totals)
             best_solution = solutions[fitness_totals.index(best_fitness)]
             best_deposit = deposits[fitness_totals.index(best_fitness)]
-            best_pheromone_matrix = pheromone_matrix.copy()
-            best_huristic_matrix = huristic_matrix.copy()
 
             [print("\__> new best solution found = ", best_fitness) if debug_print else None]
-
-            # bias towards the best solution
-            fitness_totals[fitness_totals.index(best_fitness)] = fitness_totals[fitness_totals.index(best_fitness)] * bias_to_new_best_solution # (default 1.0 - no bias)
 
 
         # mask for ignoring lower fitness values
@@ -316,14 +307,7 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         # perform evaporation (1 - p)\tau_{ij}
         pheromone_matrix = pheromone_matrix * evaporation_rate
 
-    # plot best in each run over time 
-    plt.plot(range(len(best_solution_ot)), best_solution_ot)
-    plt.xlabel('Generation')
-    plt.ylabel('Best Fitness')
-    plt.title('Best Fitness over Generations')
-    plt.show()
-
-    return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals
+    return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_solution_ot
 
 """
     Plotting functions 
@@ -396,15 +380,43 @@ def select_raondom(display = False):
 
     return solution
 
+def test_over_time(n = 50):
+    """
+        Test the main function over time
+
+        n: number greater than 2 (default 50)
+    """
+
+    best_values = []
+
+    _, _best_fitness, __, values, weights, ___, _best_ot = main(True)
+    
+    best_solution_ot = _best_ot
+    best_values = _best_fitness
+
+    for i in range(n-1):
+        print("run = ", (i + 1))
+        best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_ot = main(True)
+        best_values += best_fitness
+        best_solution_ot = [best_solution_ot[i] + best_ot[i] for i in range(len(best_solution_ot))]
+        print("best fitness = ", best_fitness)
+        print("total weight of best solution = ", np.round(sum([weights[i] for i in best_solution]), 1))
+    best_values = best_values / n
+
+    print("average best values = ", best_values)
+
+    for i in range(len(best_solution_ot)):
+        best_solution_ot[i] = best_solution_ot[i] / n
+
+    plt.plot(range(len(best_solution_ot)), best_solution_ot)
+    plt.xlabel('Generation')
+    plt.ylabel('Best Fitness')
+    plt.title('Average Best Fitness over Generations')
+    plt.show()
+
+
 """
     Initialisation
 """
 
-best_solution, best_fitness, best_deposit, values, weights, evaluation_totals = main(True)
-
-print("best solution = ", best_solution)
-print("best fitness = ", best_fitness)
-print("total weight of best solution = ", sum([weights[i] for i in best_solution]))
-print("total evaluations = ", evaluation_totals)
-
-draw_val_weight_scatter(weights, values, best_solution)
+test_over_time(200)
