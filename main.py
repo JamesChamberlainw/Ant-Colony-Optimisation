@@ -389,7 +389,8 @@ def test_over_time(n = 50):
         n: number greater than 2 (default 50)
     """
 
-    best_values = []
+    # store unique values for best and total number of occurences
+    fitness_occurences = {}
 
     _, _best_fitness, __, values, weights, ___, _best_ot = main(True)
     
@@ -402,11 +403,14 @@ def test_over_time(n = 50):
         best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_ot = main(True)
         best_values += best_fitness
         best_solution_ot = [best_solution_ot[i] + best_ot[i] for i in range(len(best_solution_ot))]
+        fitness_occurences = {best_fitness: fitness_occurences.get(best_fitness, 0) + 1}
         print("best fitness = ", best_fitness)
         print("total weight of best solution = ", np.round(sum([weights[i] for i in best_solution]), 1))
     best_values = best_values / n
 
     print("average best values = ", best_values)
+
+    print("fitness occurences = ", fitness_occurences)
 
     for i in range(len(best_solution_ot)):
         best_solution_ot[i] = best_solution_ot[i] / n
