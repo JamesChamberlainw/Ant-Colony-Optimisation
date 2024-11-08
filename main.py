@@ -103,6 +103,8 @@ def init_pheromone_matrix(size, initial_pheromone = initial_pheromone):
 
     # random values between 0 and 1
     matrix = np.random.rand(size, size) * initial_pheromone
+    
+    np.fill_diagonal(matrix, 0) 
 
     return matrix
 
@@ -289,7 +291,7 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         # adjust so that deposit ammount is proportional to fitness (to give higher priority to better solutions)
         # fitness_totals = fitness_totals / sum(fitness_totals)
         _sum = sum(fitness_totals)
-        fitness_totals = [fitness_totals[i] * _sum for i in range(len(fitness_totals))]
+        fitness_totals = [fitness_totals[i] / _sum for i in range(len(fitness_totals))]        
 
         # update pheromone matrix evaporated \tau_{ij} + \Delta\tau_{ij}
         for i in range(population):
@@ -393,6 +395,7 @@ def test_over_time(n = 50):
     
     best_solution_ot = _best_ot
     best_values = _best_fitness
+    fitness_occurences = {_best_fitness: fitness_occurences.get(_best_fitness, 0) + 1}
 
     for i in range(n-1):
         print("run = ", (i + 1))
