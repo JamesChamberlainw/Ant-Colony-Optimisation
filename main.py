@@ -309,10 +309,6 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         # perform evaporation (1 - p)\tau_{ij}
         pheromone_matrix = pheromone_matrix * evaporation_rate
 
-    # heatmaps for report 
-    # draw_heatmap(pheromone_matrix)
-    # draw_heatmap(huristic_matrix)
-
     return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_solution_ot
 
 """
@@ -396,7 +392,10 @@ def test_over_time(n = 50):
     # store unique values for best and total number of occurences
     fitness_occurences = {}
 
-    _, _best_fitness, __, values, weights, ___, _best_ot = main(True)
+    _best_solution, _best_fitness, __, values, weights, ___, _best_ot = main(True)
+
+    print("total weight of all bags: ", sum(weights))
+    print("total weight of all bags ", sum(values))
     
     best_solution_ot = _best_ot
     min_solution_ot = _best_ot
@@ -405,21 +404,14 @@ def test_over_time(n = 50):
 
     print("run = 0")
     print("best fitness = ", _best_fitness)
-    print("best weight = ", np.round(sum(weights), 1))  
-
-    # fitness_occurences = {_best_fitness: 1}
+    print("total weight of best solution = ", np.round(sum([weights[i] for i in _best_solution]), 1))
 
     for i in range(n-1):
         print("run = ", (i + 1))
         best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_ot = main(True)
         best_values += best_fitness
         best_solution_ot = [best_solution_ot[i] + best_ot[i] for i in range(len(best_solution_ot))]
-        # if best_fitness in fitness_occurences:
-        #     fitness_occurences[best_fitness] += 1
-        # else: 
-        #     fitness_occurences += {best_fitness: 1}
 
-        # for each value replace if min or max
         for i in range(len(best_ot)):
             if best_ot[i] <= min_solution_ot[i]:
                 min_solution_ot[i] = best_ot[i]
