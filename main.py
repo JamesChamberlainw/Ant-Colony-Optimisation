@@ -219,7 +219,7 @@ def update_pheromone_matrix(pheromone_matrix, all_deposits, fitness, deposit_rat
 
     for deposit in all_deposits:
         for i in range(len(deposit)):
-            pheromone_matrix[deposit[0], deposit[1]] += deposit_rate*fitness
+            pheromone_matrix[deposit[0], deposit[1]] += deposit_rate*fitness*(1/len(deposit)) # total deposit * fitness eval (proprtional to total tau) * 1/(number of deposits)
 
     return pheromone_matrix
 
@@ -309,6 +309,10 @@ def main(huristic_matrix = None, pheromone_matrix = None, debug_print = False):
         # perform evaporation (1 - p)\tau_{ij}
         pheromone_matrix = pheromone_matrix * evaporation_rate
 
+    # heatmaps for report 
+    # draw_heatmap(pheromone_matrix)
+    # draw_heatmap(huristic_matrix)
+
     return best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_solution_ot
 
 """
@@ -395,15 +399,34 @@ def test_over_time(n = 50):
     _, _best_fitness, __, values, weights, ___, _best_ot = main(True)
     
     best_solution_ot = _best_ot
+    min_solution_ot = _best_ot
+    max_solution_ot = _best_ot
     best_values = _best_fitness
-    fitness_occurences = {_best_fitness: fitness_occurences.get(_best_fitness, 0) + 1}
+
+    print("run = 0")
+    print("best fitness = ", _best_fitness)
+    print("best weight = ", np.round(sum(weights), 1))  
+
+    # fitness_occurences = {_best_fitness: 1}
 
     for i in range(n-1):
         print("run = ", (i + 1))
         best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_ot = main(True)
         best_values += best_fitness
         best_solution_ot = [best_solution_ot[i] + best_ot[i] for i in range(len(best_solution_ot))]
-        fitness_occurences = {best_fitness: fitness_occurences.get(best_fitness, 0) + 1}
+        # if best_fitness in fitness_occurences:
+        #     fitness_occurences[best_fitness] += 1
+        # else: 
+        #     fitness_occurences += {best_fitness: 1}
+
+        # for each value replace if min or max
+        for i in range(len(best_ot)):
+            if best_ot[i] <= min_solution_ot[i]:
+                min_solution_ot[i] = best_ot[i]
+            
+            if best_ot[i] <= max_solution_ot[i]:
+                max_solution_ot[i] = best_ot[i]
+            
         print("best fitness = ", best_fitness)
         print("total weight of best solution = ", np.round(sum([weights[i] for i in best_solution]), 1))
     best_values = best_values / n
@@ -415,15 +438,39 @@ def test_over_time(n = 50):
     for i in range(len(best_solution_ot)):
         best_solution_ot[i] = best_solution_ot[i] / n
 
-    plt.plot(range(len(best_solution_ot)), best_solution_ot)
+    # plt.plot(range(len(best_solution_ot)), best_solution_ot, label='Average Best Fitness')
+    # plt.plot(range(len(min_solution_ot)), min_solution_ot, label='Minimum Best Fitness', linestyle='dashed', color='red')
+    # plt.plot(range(len(max_solution_ot)), max_solution_ot, label='Maximum Best Fitness', linestyle='dashed', color='green')
+    # plt.xlabel('Generation')
+    # plt.ylabel('Best Fitness')
+    # plt.title('Average Best Fitness over Generations')
+    # plt.show()
+
+    # plot all three on the same graph
+    plt.plot(range(len(best_solution_ot)), best_solution_ot, label='Average Best Fitness')
+    
+    # plt.plot(range(len(min_solution_ot)), min_solution_ot, label='Minimum Best Fitness')
+   
+    # plt.plot(range(len(max_solution_ot)), max_solution_ot, label='Maximum Best Fitness')
     plt.xlabel('Generation')
     plt.ylabel('Best Fitness')
     plt.title('Average Best Fitness over Generations')
+    plt.legend()
     plt.show()
+
 
 
 """
     Initialisation
 """
 
-test_over_time(200)
+# best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_ot = main()
+
+# print("best solution = ", best_solution)
+# print("best fitness = ", best_fitness)
+# print("total weight of best solution = ", np.round(sum([weights[i] for i in best_solution]), 1))
+# print("total evaluations = ", evaluation_totals)
+
+# draw_val_weight_scatter(weights, values, best_solution)
+
+test_over_time(5)
