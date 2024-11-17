@@ -389,10 +389,6 @@ def test_over_time(n = 50):
         n: number greater than 2 (default 50)
     """
 
-    # # store unique values for best and total number of occurences
-    # unique_solution = []
-    # unique_solution_value = []
-    # unique_solution_weight = []
     solution_one = 0
     solution_two = 0
 
@@ -437,35 +433,19 @@ def test_over_time(n = 50):
             solution_two += 1
         else:
             print("Error: unexpected value found ****************************************************************************************************") # should never happen but this is what it comes to when the language is so against saving a copy of a list and comparing it against other lists without having to manually check each value 
-            print("VALUE: ", best_fitness)
-        # if unique_solution.__contains__(sorted(best_solution)):   # no clue why but it KEEPS REPLAING ALL VALUES FOR NO APPARENT REASON WHY REFERENCE DEEPCOPY DOESN'T EVEN FIX THIS WTF
-        #     unique_solution.append(copy.deepcopy(sorted(best_solution)))
-        #     unique_solution_value.append(best_fitness)
-        #     unique_solution_weight.append(np.round(sum([weights[i] for i in best_solution]), 1))
-
-        #     if len(unique_solution) > len(unique_solution_value):
-        #         # only here incase the code needs to be adjusted to account for this  as value doesn't appear to change but if weight does it will be a needed check to print 
-        #         # at this point its already narrowed down to 2 possible so should be fine 
-        #         print("Error: unique_solution and unique_solution_value are not the same length")
+            print("VALUE: ", best_fitness)  # I know this could be done dynamically but only once have i ever seen it go over - and thats THE ONE USED IN THE REPORT (this is after 1000s of runs just these were not saved)
         
         print("best fitness = ", best_fitness)
         print("total weight of best solution = ", np.round(sum([weights[i] for i in best_solution]), 1))
+        for i in range(len(best_solution)):
+            best_solution[i] = int(best_solution[i]) + 1 # convert to bag number
+        print("Solution = ", sorted(best_solution))
+        # draw_val_weight_scatter(weights, values, best_solution) # draw best solution
     best_values = best_values / n
 
     print("average best values = ", best_values)
-
-    # print("unique solutions = ", len(unique_solution))
-
-    # # display each unique solution  (findall? ) # IGNORE BROKEN DUE TO REFERENCE ISSUES WITH LISTS (REPLACING VALUES FOR NO REASON)
-    # for i in range(len(unique_solution)):
-    #     print("unique solution = ", unique_solution[i])
-    #     print("unique solution value = ", unique_solution_value[i])
-    #     print("unique solution weight = ", unique_solution_weight[i])
-
     print("total occurences of 4528: " , solution_one)
     print("total occurences of 4527: " , solution_two)
-
-
 
 
     # plot all three on the same graph
@@ -491,4 +471,4 @@ def test_over_time(n = 50):
 
 # draw_val_weight_scatter(weights, values, best_solution)
 
-test_over_time(500)
+test_over_time(5)
