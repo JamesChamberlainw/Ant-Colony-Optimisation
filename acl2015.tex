@@ -1,0 +1,189 @@
+%
+% File acl2015.tex
+%
+% Contact: car@ir.hit.edu.cn, gdzhou@suda.edu.cn
+%%
+%% Based on the style files for ACL-2014, which were, in turn,
+%% Based on the style files for ACL-2013, which were, in turn,
+%% Based on the style files for ACL-2012, which were, in turn,
+%% based on the style files for ACL-2011, which were, in turn, 
+%% based on the style files for ACL-2010, which were, in turn, 
+%% based on the style files for ACL-IJCNLP-2009, which were, in turn,
+%% based on the style files for EACL-2009 and IJCNLP-2008...
+
+%% Based on the style files for EACL 2006 by 
+%%e.agirre@ehu.es or Sergi.Balari@uab.es
+%% and that of ACL 08 by Joakim Nivre and Noah Smith
+
+\documentclass[11pt]{article}
+\usepackage{acl2015}
+\usepackage{times}
+\usepackage{url}
+\usepackage{latexsym}
+\usepackage{graphicx} 
+\usepackage{blindtext}
+\usepackage{amsmath}
+
+
+%\setlength\titlebox{5cm}
+
+% You can expand the titlebox if you need extra space
+% to show all the authors. Please do not make the titlebox
+% smaller than 5cm (the original size); we will check this
+% in the camera-ready version and ask you to change it back.
+
+
+\title{Ant Colony Optimization for the 0/1 Knapsack Problem}
+
+\author{Student id: 740036129  \\
+  University of Exeter \\
+  {\tt ECMM409 ACO} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    \noindent This paper focuses on generating a near-optimal solution for the 0/1 knapsack problem for the provided $BankProblem.txt$ dataset by adjusting the Ant Colony Optimization (ACO) algorithm. Here we try to maximise the tonal value of all bags collected without going over $295$kg weight limit for the van.
+\end{abstract}
+
+\section{Introduction}
+
+\blindtext
+\blindtext
+
+\section{Literature Review}
+
+Literature Review - 0/1 Knapsack 
+
+\blindtext
+\blindtext
+\blindtext
+
+\section{Methodology}
+\textit{Algorithm Design} \\ 
+
+\vspace{-0.5em}
+\noindent The provided $BankProblem.txt$ dataset consists of the total van capacity and a set of 100 bags where each bag has a \textit{bag number}, \textit{weight} and \textit{value}. Building on this, the following section addresses the decisions made regarding adjustments to the default ACO algorithm to achieve results ranging between £$4527$ and £$4528$. \\
+
+\noindent This sections starts over a very important aspect being the heuristic, covering why it was chosen. Next we cover the pheromone matrix, going over the fitness function and how this is then used to determine how much each deposit is placed onto this matrix. 
+
+\subsection{The heuristic}
+\textit{A good heuristic will guide the algorithm in the correct direction.} \\ 
+
+\vspace{-0.5em}
+\noindent As previously stated we are given a dataset containing 100 values and weights for each bag; the heuristic values need to each be a single value - to solve this problem value is divided by weight for each bag:  
+
+\vspace{-0.3em}
+
+$$
+    vpw = \frac{value}{weight}
+$$
+
+\vspace{0.5em}
+
+\noindent Value Per Weight ($vpw$) is now an array size $(100,)$, after taking the maximum $vpw_{max}$ and minimum $vpw_{min}$ measurements this can be then taken and normalised the data between 0.0 and 1.0 to produce a very easy metric to work with. \\
+
+\vspace{-1.5em}
+
+$$
+vpw_i = \frac{vpw_i - vpw_{min}}{vpw_{max} - vpw_{min}}
+$$
+
+\vspace{0.5em}
+
+\noindent As such $vpw$ can now be seen that the value's in the set are ranging between $0.0$, being the worst and $1.0$ being the best. It is important to note bags can still be explored due to randomness in the initial pheromone matrix, but these low values highly not recommended by the heuristic. \\
+
+\noindent After this $vpw$ is used to generate the vertical columns for the heuristic matrix, ultimately unlike the travailing salesmen problem there are no distinct distances between bags, so the next bag has no direct distance relation to the previous bag picked and the current but what the will be found by the ACO algorithm. This is purely due to the structure of the \textit{BankProblem} dataset that these relations are made. 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.8\linewidth]{images/huristic_matrix.png}
+    \caption{Illustration of the Heuristic Matrix}
+    \label{fig:heuristic-mat}
+\end{figure} 
+
+\noindent The horizontal can be seen to be full of zeros, this is because we do not want the ant to risk re-visiting itself. \\
+
+\noindent Ultimately this heuristic was chosen because it effectively directs the search process toward optimal solutions, eliminating the need for the ACO algorithm to perform additional searches (and risking settling in non-optimal solutions), which would increase the computational load needed to find near-optimal solutions in this case.
+
+\subsection{The pheromone matrix}
+
+The initial pheromone matrix is just a $(100, 100)$ with values between $0.0$ and $1.0$ with full zeros across the horizontal. \\
+
+\noindent After the pheromone matrix has been well established by going through enough generations patterns do appear in regards to where the ant prefers to visit. Interestingly due to the structure of the Heuristic matrix the vertical columns become partially viable across some node visitation patterns. 
+
+\subsubsection{Pheromone distribution and the fitness function}
+
+Here we use 10 ants as such there are solutions $S_N$ represents the sum of all values in a solution, where $N \in \{1, 2, 3... ., 10\}$ \\
+
+\noindent Using inspiration from elitist evolutionary algorithms, a basic fitness mask was created where the worst $20\%$ of values are removed
+$$
+S_{N} =
+\begin{cases}
+0 & \text{if } S_n \leq S_{worst} + 0.2 \cdot (S_{best} - f_{worst}) \\{S_n} & \text{otherwise}
+\end{cases}
+$$
+\textbf{Note:} to worst and best values are precomputed before applied to the set so no skew is made to the resultant solution value set. \\
+
+\noindent The fitness is then proportional to those fitness values. 
+
+Here we already get pretty good outputs from the ACO algorithm (given good adjustments made to $\tau$ and $\eta$, $\alpha$ and $\beta$). If the heuristic was much worse and didn't already make the ACO algorithm find such good solutions an alternative fitness function could have been implemented. 
+
+Elitism can be used here to squee the solutions towards finding better solutions, here we settled on a basic $20\%$ mask that would set the worst solutions to 0 - thus removing any pheromone from being able to be deposited. This overall tipped the solutions to reaching much higher values. \\
+
+\noindent Reducing this threshold for 10 ants, it was found that this did not make an optimal impact on the outcome (i.e., 10\% or less) and where the threshold was much higher it was found that yes at first it would continue to get better but when it reached a certain margin, this started to impact the ACO's ability to search. As such the 20\% was settled on as it aided the search process. \\
+
+\noindent \textbf{An Alternative Approach that could be taken:} \\
+Alternatively if we were not already getting such good results another fitness function might perform better. The suggestion would be to look towards using a sigmoid function on the values, skew that slightly towards better solutions then use that after normalising the values between 0 and 1, then standardise that for all values so it becomes a sum total of $\tau$ to determine pheromone deposit for a set of solutions. \\
+
+\subsubsection{Evaporation}
+
+\noindent An important thing to note, even though its not been talked about directly here, each set once given its pheromone deposit further breaks that down to evenly distribute between all values for each deposit for every node. As such an important observation can be made that the impact of a single ant visiting one node is small, but the cumulative nature of the ants pheromone creates a major impact - as such evaporation might take away what most if not all of what one ant deposits but with enough ants visiting any given node it makes it will become a trail they often follow. \\
+
+\noindent Here we only use about a $5\%$ evaporation rate ($0.95 \cdot \text{pheromone matrix}$). 
+
+\section{Results}
+\label{results}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{images/100runs.png}
+    \caption{Illustration showing the average best over each generation of ants given that there are 10 ants per generation, 1000 generations and 10,000 total fitness evaluations.}
+    \label{fig:enter-label}
+\end{figure}
+
+\clearpage
+\section{Discussion and Further Work}
+
+% \blindtext
+
+\subsection{Which combination of parameters produces the best results?}
+
+% \blindtext
+
+\subsection{What do you think is the reason for your findings in Question 1?}
+
+% \blindtext
+
+\subsection{How do each of the parameter settings influence the performance of the algorithm?}
+
+% \blindtext
+
+\subsection{Do you think that one of the algorithms in your literature review might have provided better
+results? Explain your answer.}
+
+% \blindtext
+
+\begin{thebibliography}{}
+
+\bibitem[\protect\citename{ACO}]\endcsname
+\newblock Dorigo, Marco and St\"{u}zle Thomas 
+\newblock 2004.
+\newblock {\em Ant colony optimization / Ant colony optimization}, ISBN: 9780262042192
+\newblock Cambridge, Mass.
+
+\end{thebibliography}
+
+\end{document}
