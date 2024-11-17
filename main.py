@@ -389,8 +389,12 @@ def test_over_time(n = 50):
         n: number greater than 2 (default 50)
     """
 
-    # store unique values for best and total number of occurences
-    fitness_occurences = {}
+    # # store unique values for best and total number of occurences
+    # unique_solution = []
+    # unique_solution_value = []
+    # unique_solution_weight = []
+    solution_one = 0
+    solution_two = 0
 
     _best_solution, _best_fitness, __, values, weights, ___, _best_ot = main(True)
 
@@ -406,6 +410,14 @@ def test_over_time(n = 50):
     print("best fitness = ", _best_fitness)
     print("total weight of best solution = ", np.round(sum([weights[i] for i in _best_solution]), 1))
 
+    if _best_fitness == 4528.0:
+        solution_one += 1
+    elif _best_fitness == 4527.0:
+        solution_two += 1
+    else:
+        print("Error: unexpected value found ****************************************************************************************************") # should never happen but this is what it comes to when the language is so against saving a copy of a list and comparing it against other lists without having to manually check each value 
+        print("VALUE: ", _best_fitness)
+
     for i in range(n-1):
         print("run = ", (i + 1))
         best_solution, best_fitness, best_deposit, values, weights, evaluation_totals, best_ot = main(True)
@@ -418,32 +430,46 @@ def test_over_time(n = 50):
             
             if best_ot[i] <= max_solution_ot[i]:
                 max_solution_ot[i] = best_ot[i]
-            
+
+        if best_fitness == 4528.0:
+            solution_one += 1
+        elif best_fitness == 4527.0:
+            solution_two += 1
+        else:
+            print("Error: unexpected value found ****************************************************************************************************") # should never happen but this is what it comes to when the language is so against saving a copy of a list and comparing it against other lists without having to manually check each value 
+            print("VALUE: ", best_fitness)
+        # if unique_solution.__contains__(sorted(best_solution)):   # no clue why but it KEEPS REPLAING ALL VALUES FOR NO APPARENT REASON WHY REFERENCE DEEPCOPY DOESN'T EVEN FIX THIS WTF
+        #     unique_solution.append(copy.deepcopy(sorted(best_solution)))
+        #     unique_solution_value.append(best_fitness)
+        #     unique_solution_weight.append(np.round(sum([weights[i] for i in best_solution]), 1))
+
+        #     if len(unique_solution) > len(unique_solution_value):
+        #         # only here incase the code needs to be adjusted to account for this  as value doesn't appear to change but if weight does it will be a needed check to print 
+        #         # at this point its already narrowed down to 2 possible so should be fine 
+        #         print("Error: unique_solution and unique_solution_value are not the same length")
+        
         print("best fitness = ", best_fitness)
         print("total weight of best solution = ", np.round(sum([weights[i] for i in best_solution]), 1))
     best_values = best_values / n
 
     print("average best values = ", best_values)
 
-    print("fitness occurences = ", fitness_occurences)
+    # print("unique solutions = ", len(unique_solution))
 
-    for i in range(len(best_solution_ot)):
-        best_solution_ot[i] = best_solution_ot[i] / n
+    # # display each unique solution  (findall? ) # IGNORE BROKEN DUE TO REFERENCE ISSUES WITH LISTS (REPLACING VALUES FOR NO REASON)
+    # for i in range(len(unique_solution)):
+    #     print("unique solution = ", unique_solution[i])
+    #     print("unique solution value = ", unique_solution_value[i])
+    #     print("unique solution weight = ", unique_solution_weight[i])
 
-    # plt.plot(range(len(best_solution_ot)), best_solution_ot, label='Average Best Fitness')
-    # plt.plot(range(len(min_solution_ot)), min_solution_ot, label='Minimum Best Fitness', linestyle='dashed', color='red')
-    # plt.plot(range(len(max_solution_ot)), max_solution_ot, label='Maximum Best Fitness', linestyle='dashed', color='green')
-    # plt.xlabel('Generation')
-    # plt.ylabel('Best Fitness')
-    # plt.title('Average Best Fitness over Generations')
-    # plt.show()
+    print("total occurences of 4528: " , solution_one)
+    print("total occurences of 4527: " , solution_two)
+
+
+
 
     # plot all three on the same graph
-    plt.plot(range(len(best_solution_ot)), best_solution_ot, label='Average Best Fitness')
-    
-    # plt.plot(range(len(min_solution_ot)), min_solution_ot, label='Minimum Best Fitness')
-   
-    # plt.plot(range(len(max_solution_ot)), max_solution_ot, label='Maximum Best Fitness')
+    plt.plot(range(len(best_solution_ot)), best_solution_ot, label='Average Best Fitness')   
     plt.xlabel('Generation')
     plt.ylabel('Best Fitness')
     plt.title('Average Best Fitness over Generations')
@@ -465,4 +491,4 @@ def test_over_time(n = 50):
 
 # draw_val_weight_scatter(weights, values, best_solution)
 
-test_over_time(5)
+test_over_time(500)
