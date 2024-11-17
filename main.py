@@ -27,11 +27,13 @@ def load_data():
     
 
     returns: weights, values, capacity:
-    capacity: float             # capacity of the van
-    weights: list of floats     # weights of the bags 
-    values: list of floats      # values of the bags 
+    capacity:       float               capacity of the van
+    weights:        list of floats      weights of the bags 
+    values:         list of floats      values of the bags 
 
     Note: Bag index for weights/values is bag number - 1 (e.g. bag 1 is index 0)
+    
+    returns: weights, values, capacity 
     """
 
     weights = []
@@ -155,10 +157,11 @@ def ant(pheromones, huristics, weights, capacity):
     """ 
         Ant function to perform a single search up till capacity is reached
 
-        pheromones: np.array of shape (size, size)    pheromone matrix
-        huristics: np.array of shape (size, size)     huristic matrix
-        weights: list of floats                       weights of the bags
-        capacity: float                               capacity of the van
+        imputs:
+        pheromones      np.array of shape (size, size)      pheromone matrix
+        huristics       np.array of shape (size, size)      huristic matrix
+        weights         list of floats                      weights of the bags
+        capacity        float                               capacity of the van
 
         returns: solution, deposit
         solution: list of ints                         id of the bags selected by the ant # this is -1 to the value
@@ -213,8 +216,10 @@ def update_pheromone_matrix(pheromone_matrix, all_deposits, fitness, deposit_rat
         Update the pheromone matrix based on where the ants have been
 
         inputs:
-        fitness: % of total fitness for each solution takes up (pre-computed before this function)
-        deposit_rate: the total amount of pheromone to deposit on each node visited (default 1.0)
+        pheromone_matrix:   np.array of shape (size, size)  pheromone matrix
+        all_deposits:       list of containing ints         all positions visited by the individual ant 
+        fitness:            float                           % of total fitness for each solution takes up (pre-computed before this function)
+        deposit_rate:       tau                             the total amount of pheromone to deposit on each node visited (default 1.0)
     """
 
     for deposit in all_deposits:
