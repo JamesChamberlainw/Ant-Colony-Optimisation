@@ -45,22 +45,43 @@
 \maketitle
 
 \begin{abstract}
-    \noindent This paper focuses on generating a near-optimal solution for the 0/1 knapsack problem for the provided $BankProblem.txt$ dataset by adjusting the Ant Colony Optimization (ACO) algorithm. Here we try to maximise the tonal value of all bags collected without going over $295$kg weight limit for the van.
+    \noindent This paper focuses on generating a near-optimal and optimal solution for the 0/1 knapsack problem for the provided $BankProblem.txt$ dataset by adjusting the Ant Colony Optimization (ACO). Here we try to maximise the tonal value of all bags collected without going over $295$kg weight limit for the van.
 \end{abstract}
 
 \section{Introduction}
 
-\blindtext
-\blindtext
+In this paper we explore the use of ant colony optimisation (ACO) for the approximation and finding of near to optima solutions for the 0/1 Knapsack Problem for the \textit{BankProblem.txt} dataset what has a maximum capacity of $295$kg. 
+
+\subsection{The 0/1 Knapsack Problem}
+
+In this problem we have a set of bags, each bag has a \textit{id}, \textit{wight} and a \textit{value}. The aim for this problem is to fill the van with as much value as possible, however the van has a weight limit of $295$kg and the the total weight of all the bags in the dataset is $539.9$kg as such we need to select the best possible bags to load the van with. \\
+
+\noindent The \textit{BankProblem.txt} dataset contains 100 bags. The total value of all of the bags is £$5628$ and when searching purely randomly it falls around £3000 to fitting into the van.
 
 \section{Literature Review}
 
-Literature Review - 0/1 Knapsack 
+This entire section has two major references one being \cite{hristakeva_shrestha_2005} and \cite{branch_and_bond_2024}. The paper covers everything, the geeksforgeeks goes into detail for most covered but has a special focus on Branch and Bound \ref{branchandbund}.
 
-\blindtext
-\blindtext
-\blindtext
+\subsection{Greedy Algorithm}
 
+The greedy algorithm is a quick way of generating an estimate, that would compute a \textbf{value-to-weight} ratio (v/w) for each bag, this algorithm then sorts the highest to lowest and starts searching from there. This means that the higher ratio values are guaranteed to make it, but as it gets to lower values it will skip over bags that potentially in combination with other bags would have a much better ratio. 
+
+Overall this is a quick way of gathering an estimate and would perform way better than random due to having a very good heuristic for this problem. However would suffer from missing out on potential smaller bag combinations meaning it would potentially not reach the optima.    
+
+\subsection{Genetic Algorithm}
+
+One potential approach for solving this would be to use a \textbf{Genetic Algorithm} (GA). In the GA, it would generate a population, in the each individual contains \textit{chromosomes}, each one representing a individual bag (True or False). This through the selection, crossover and mutation process (along side repair what would be needed if a individual violates the weight limit), would progressively find better solutions till it either falls into a local optima or find the optima solution.  
+
+\subsection{Branch and Bound}
+\label{branchandbund}
+
+This approach builds upon the Greedy Algorithm mentioned earlier. This works by breaking down the problem and placing it into a tree, this then will using the greedy algorithm, determine weather or not each branch is worth while in a bottom up approach following a depth first search behaviour pattern. \\
+
+\noindent This algorithm generates the actual maximum value, through searching and ensuring that it does not discard a branch until it is fully explored - only discarding if it does not fulfil the weight requirements. Running our dataset through the \textit{geeksforgeeks.org} implementation we find that the maximum possible value placed in the van for the \textit{BankProblem.txt} dataset is £$4528$. (\cite{branch_and_bond_2024})
+
+\subsection{Brute Force}
+
+This method similar to Branch and Bound will find the best possible solution, in a much simpler way, however is dramatically more computationally expensive as it searches all possible solutions. As such as a big-o notation of $O(n) = 2^n$. So even if we go for 10,000 checks, this algorithm will still be searching. ($O(100) = 2^100$) \cite{hristakeva_shrestha_2005}.  
 \section{Methodology}
 \textit{Algorithm Design} \\ 
 
@@ -70,6 +91,7 @@ Literature Review - 0/1 Knapsack
 \noindent This sections starts over a very important aspect being the heuristic, covering why it was chosen. Next we cover the pheromone matrix, going over the fitness function and how this is then used to determine how much each deposit is placed onto this matrix. 
 
 \subsection{The heuristic}
+\label{huristic-mat}
 \textit{A good heuristic will guide the algorithm in the correct direction.} \\ 
 
 \vspace{-0.5em}
@@ -122,7 +144,7 @@ Here we use 10 ants as such there are solutions $S_N$ represents the sum of all 
 $$
 S_{N} =
 \begin{cases}
-0 & \text{if } S_n \leq S_{worst} + 0.2 \cdot (S_{best} - f_{worst}) \\{S_n} & \text{otherwise}
+0 & \text{if } S_n \leq S_{worst} + 0.2 \cdot (S_{best} - S_{worst}) \\{S_n} & \text{otherwise}
 \end{cases}
 $$
 \textbf{Note:} to worst and best values are precomputed before applied to the set so no skew is made to the resultant solution value set. \\
@@ -144,46 +166,88 @@ Alternatively if we were not already getting such good results another fitness f
 
 \noindent Here we only use about a $5\%$ evaporation rate ($0.95 \cdot \text{pheromone matrix}$). 
 
-\section{Results}
+\section{Results, Discussion and Further Work}
 \label{results}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=1.0\linewidth]{images/100runs.png}
     \caption{Illustration showing the average best over each generation of ants given that there are 10 ants per generation, 1000 generations and 10,000 total fitness evaluations.}
-    \label{fig:enter-label}
+    \label{fig:average-over-time}
 \end{figure}
 
-\clearpage
-\section{Discussion and Further Work}
 
-% \blindtext
+\begin{table}[h]
+    \centering
+    \begin{tabular}{c|c|c|c}
+        4526 & 4527 & 4528 & Total\\ \hline
+        1 & 361 & 138 & 500 \\
+         $0.2\%$ & $27.6\%$ & $72.2\%$ & $100\%$ 
+    \end{tabular}
+    \caption{This table shows output occurrences out of 500 samples of running the ACO algorithm}
+    \label{bestsolutions}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{images/Figure_1_4528_294_7.png}
+    \caption{The Best Solution £$4528$ and weighs $294.7$kg. These bags in this solution are always: 2, 3, 4, 5, 6, 8, 9, 11, 15, 16, 19, 20, 21, 24, 25, 28, 29, 31, 32, 33, 34, 36, 37, 38, 40, 42, 44, 45, 46, 47, 48, 50, 51, 53, 54, 56, 57, 58, 59, 60, 61, 62, 63, 65, 66, 67, 69, 72, 73, 74, 76, 77, 78, 80, 83, 84, 87, 89, 90, 91, 95, 96, 98, 99, 100}
+    \label{actualbest}
+\end{figure}
+
+\noindent The best solution is £$4528$ and weighs $294.7$kg can be seen in \ref{actualbest}. The average solution is £$4527.72$ (cannot achieve this value but more than not its optimal). 
 
 \subsection{Which combination of parameters produces the best results?}
 
+The best results were found using these values: 
+\begin{itemize}
+    \item $\tau$ - $1.0$            Amount Deposited Each Generation ($\sum(\text{deposited on every node})$) 
+    \item $\tau_{max}$ - $1.0$ A cap stopping a node being oversaturated. thus keeping it proportional to $\alpha$ and $\beta$
+    \item $\alpha$ - $1.0$ Proportional impact of pheromone $\tau$ on search 
+    \item $\beta$ - $2.0$ Proportional impact of heuristic on search
+    \item $p$ - $0.95$ evaporation rate (only $5\%$ removed) 
+    \item Population - 10
+\end{itemize}
+
+\noindent This was all tested on 10000 evaluations, where each evaluation is one set ($S_N$) of bags up to $295$kg. Thus 10 ants meaning there were 1000 generations. \\
+
+\noindent There are improvements that are possible but that is only marginal between runs by £$1$ when it already finds the best solution most of the time (£$4527$ vs. £$4528$).
+
 % \blindtext
 
-\subsection{What do you think is the reason for your findings in Question 1?}
+\subsubsection{Why are these results produced and why do these parameters influence in such a way? (Q1-3)}
 
-% \blindtext
+These results are produced due to a combination of the ACO algorithm searching and there being a very good heuristic for the dataset. \\
 
-\subsection{How do each of the parameter settings influence the performance of the algorithm?}
+\noindent Ultimately this is due to the dataset being so simple with such a limited way that it can be adapted for creating a heuristic matrix as seen in section \ref{huristic-mat}. Based on this good heuristic, the ants quickly capture the relationship, additionally the use of the value based fitness function masking out poor solutions speeding up the convergence towards a good search space. These ants then have a good area to explore and revisit near optimum solutions often. \\
 
-% \blindtext
+\noindent The 2 parts $\beta$ keep the solution looking towards very good bags to select and the $\alpha$ allows the algorithm to search around this for better combinations of solutions - this can be highlighted very well in figure \ref{bestsolutions}. \\
 
-\subsection{Do you think that one of the algorithms in your literature review might have provided better
-results? Explain your answer.}
+\noindent Given $\alpha$ and $\beta$ using such a low amount evaporated each generation in combination with such a low amount of pheromone deposited (when looking at a single bag for a single ant visit), it means that when it goes to a poor solution if not caught out by the fitness function such a low amount of pheromone will not create major changes. However when it starts to find a better path it really latches on over a couple generations as it is cumulative even with parts being evaporated slowly. This explains why it finds £4528 more so than it does £4527 as the final solution and can even be seen in figure \ref{fig:average-over-time}. \\
 
-% \blindtext
+\noindent The use of a maximum $\tau_{max}$ value has had a very large impact in improving reliability of producing these results, without $\tau_{max}$ resultant values would range between $4519$ to $4528$ rather than the $4527$ and $4528$ that we see. This value just means that it takes over a part of the role of the $p$ evaporation but not fully! Evaporation still plays a major role in keeping the pheromone from building up on non-optimal moves to specific nodes (bags). \\ 
 
-\begin{thebibliography}{}
+\noindent A key point with figure \ref{fig:average-over-time} the best fitness is an average for a single generation of 10 ants it often finds £4527 or very close give or take 1) before the $200^{\text{th}}$ generation, even saying that it often happens around $100^{\text{th}}$. This figure is an average and shows the search space slowly narrowing as it goes to higher values, one bag swap or a set of small bag swaps would account of this being lower by £28 or more on average), this does not mean however its not visiting these high values often (as it does and is).\\
 
-\bibitem[\protect\citename{ACO}]\endcsname
-\newblock Dorigo, Marco and St\"{u}zle Thomas 
-\newblock 2004.
-\newblock {\em Ant colony optimization / Ant colony optimization}, ISBN: 9780262042192
-\newblock Cambridge, Mass.
+\textbf{Keypoint:} A very easy way of summarising what is going on is that the 2 parts ($\beta$) are keeping the algorithm searching a good area but on its own can only find the best solution through brute force (possible with 10,000 attempts but improbable), the ACO algorithm given this heuristic $\beta$, takes over and lowers the search area with its 1 part ($\alpha$), progressively narrowing it down till it lands more and more constantly on the near-optimal and optimal solutions, and this starts working very quickly. Importantly there is always a chance it will not fall on the optima solution but slightly off, and this is due to randomness (ACO is only supposed to produce really good approximations, its just a matter of this being a simple dataset and a good heuristic we can get so close if not find it). 
 
-\end{thebibliography}
+\subsection{Does this ACO algorithm perform better than any of the alternative approaches? (Q4)}
+
+This ACO algorithm will likely perform better than two of them but on par with the other two when it comes to value (ranked in approximate order of worst to best): 
+\begin{itemize}
+    \item \textbf{Brute Force:} Despite knowing this will produce the actual optima, this takes way longer to perform as such the ACO algorithm will likely have enough time to be run multiple times - giving it enough time to find the optima if not found in the first run (even with 10,000 evaluations per run).
+    \item \textbf{The Greedy Algorithm:} This will not perform as well as the ACO algorithm due to previously discussed problems in the literature review - this is not capable of multiple small bags vs one big bag comparison as such will miss these optimisations. 
+    \item \textbf{A Standard Genetic Algorithm:} This will likely not perform as good as the dataset contains 100 bags, these bags will likely create some local optima that it can fall into as such this algorithm can only be assumed to either perform on-par or worse than this ACO without testing. 
+    \item \textbf{Branch and Bound:} This will find the optimal solution as such will outperform the ACO algorithm and can be said to perform faster as well doing to testing with an alternate implementation \cite{branch_and_bond_2024}. 
+
+    Branch and Bound outperforms ACO in value $27.8\%$ of the time with the remaining $72.2\%$ of the time achiveing the same result. 
+\end{itemize}
+
+\subsection{Future Work}
+
+Continuing on from this there is one area, I have felt that I myself have not explored and that is alternate fitness functions such as using a sigmoid function. As such this would be the next area to explore for ACO. 
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references} 
 
 \end{document}
